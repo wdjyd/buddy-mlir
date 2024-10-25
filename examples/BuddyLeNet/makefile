@@ -18,6 +18,12 @@ MLIR_ASYNC_RUNTIME := ./../llvm/build/lib/libmlir_async_runtime.dylib
 MTRIPLE := x86_64-apple-darwin
 endif
 
+test-lower:
+	${BUDDY_OPT} ./fake-lenet.mlir \
+	-pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" | \
+	${MLIR_OPT} \
+	-one-shot-bufferize="bufferize-function-boundaries=1 function-boundary-type-conversion=identity-layout-map" -convert-linalg-to-parallel-loops -canonicalize -gpu-map-parallel-loops -convert-parallel-loops-to-gpu -o tmp.mlir
+
 buddy-lenet-lower:
 	@${MLIR_OPT} ./fake-lenet.mlir \
 		-pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" | \

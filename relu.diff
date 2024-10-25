@@ -1,0 +1,2824 @@
+diff --git a/.gitignore b/.gitignore
+index 485cccf..69426a8 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -12,3 +12,6 @@
+ 
+ # Clangd cache
+ .cache
++
++# environment bash
++env.sh
+\ No newline at end of file
+diff --git a/env.sh b/env.sh
+deleted file mode 100644
+index fccbb02..0000000
+--- a/env.sh
++++ /dev/null
+@@ -1,7 +0,0 @@
+-cd build/
+-export BUDDY_MLIR_BUILD_DIR=$PWD
+-export LLVM_MLIR_BUILD_DIR=$PWD/../llvm/build
+-export PYTHONPATH=${LLVM_MLIR_BUILD_DIR}/tools/mlir/python_packages/mlir_core:${BUDDY_MLIR_BUILD_DIR}/python_packages:${PYTHONPATH}
+-
+-export LENET_EXAMPLE_PATH=${BUDDY_MLIR_BUILD_DIR}/../examples/BuddyLeNet/
+-cd ../
+\ No newline at end of file
+diff --git a/examples/BuddyLeNet/.gitignore b/examples/BuddyLeNet/.gitignore
+index 8ef196d..6e7b67e 100644
+--- a/examples/BuddyLeNet/.gitignore
++++ b/examples/BuddyLeNet/.gitignore
+@@ -3,8 +3,11 @@ log.ll
+ log.s
+ data
+ *.data
++*.json
++*.dot
+ __pycache__
+ *.pth
+ lenet.mlir
+ forward.mlir
+ subgraph0.mlir
++subgraph1.mlir
+diff --git a/examples/BuddyLeNet/CMakeLists.txt b/examples/BuddyLeNet/CMakeLists.txt
+index 9698f61..7552f25 100644
+--- a/examples/BuddyLeNet/CMakeLists.txt
++++ b/examples/BuddyLeNet/CMakeLists.txt
+@@ -1,7 +1,7 @@
+ add_custom_command(
+-  OUTPUT ${BUDDY_EXAMPLES_DIR}/BuddyLeNet/forward.mlir ${BUDDY_EXAMPLES_DIR}/BuddyLeNet/subgraph0.mlir ${BUDDY_EXAMPLES_DIR}/BuddyLeNet/arg0.data
++  OUTPUT ${BUDDY_EXAMPLES_DIR}/BuddyLeNet/forward.mlir ${BUDDY_EXAMPLES_DIR}/BuddyLeNet/subgraph1.mlir ${BUDDY_EXAMPLES_DIR}/BuddyLeNet/arg0.data
+   COMMAND python3 ${BUDDY_EXAMPLES_DIR}/BuddyLeNet/buddy-lenet-import.py
+-  COMMENT "Generating forward.mlir, subgraph0.mlir and parameter files"
++  COMMENT "Generating forward.mlir, subgraph1.mlir and parameter files"
+ )
+ 
+ add_custom_command(
+@@ -17,9 +17,43 @@ add_custom_command(
+   COMMENT "Building forward.o"
+   VERBATIM)
+ 
++add_custom_command(
++  OUTPUT subgraph0.ll
++  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${BUDDY_EXAMPLES_DIR}/BuddyLeNet/subgraph0.mlir -gpu-kernel-outlining -llvm-request-c-wrappers -convert-vector-to-scf -convert-vector-to-llvm -func-bufferize-dynamic-offset -tensor-bufferize -buffer-deallocation -finalizing-bufferize -expand-strided-metadata  -one-shot-bufferize |
++          ${LLVM_MLIR_BINARY_DIR}/mlir-opt 
++            -pass-pipeline "builtin.module(nvvm-attach-target{chip=sm_75 O=3},  gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-arith-to-llvm), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts, gpu-module-to-binary)" |
++          ${LLVM_MLIR_BINARY_DIR}/mlir-translate -mlir-to-llvmir -o ${BUDDY_BINARY_DIR}/../examples/BuddyLeNet/subgraph0.ll
++  DEPENDS ${BUDDY_EXAMPLES_DIR}/BuddyLeNet/subgraph0.mlir
++  COMMENT "Building subgraph0.ll"
++  VERBATIM)
++  
+ add_custom_command(
+   OUTPUT subgraph0.o
+-  COMMAND ${LLVM_MLIR_BINARY_DIR}/mlir-opt ${BUDDY_EXAMPLES_DIR}/BuddyLeNet/subgraph0.mlir 
++  COMMAND ${LLVM_MLIR_BINARY_DIR}/clang++ ${BUDDY_BINARY_DIR}/../examples/BuddyLeNet/subgraph0.ll -L/usr/local/cuda/lib64 -lcudart -O3 -c -o ${BUDDY_BINARY_DIR}/../examples/BuddyLeNet/subgraph0.o
++  DEPENDS ${BUDDY_BINARY_DIR}/../examples/BuddyLeNet/subgraph0.ll
++  COMMENT "Building subgraph0.o"
++  VERBATIM)
++  
++# add_custom_command(
++#   OUTPUT subgraph1.ll
++#   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${BUDDY_EXAMPLES_DIR}/BuddyLeNet/subgraph1.mlir -gpu-kernel-outlining -llvm-request-c-wrappers -convert-vector-to-scf -convert-vector-to-llvm -func-bufferize-dynamic-offset -buffer-deallocation -finalizing-bufferize -expand-strided-metadata  -one-shot-bufferize |
++#           ${LLVM_MLIR_BINARY_DIR}/mlir-opt 
++#             -pass-pipeline "builtin.module(nvvm-attach-target{chip=sm_75 O=3},  gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-arith-to-llvm), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts, gpu-module-to-binary)" |
++#           ${LLVM_MLIR_BINARY_DIR}/mlir-translate -mlir-to-llvmir -o ${BUDDY_BINARY_DIR}/../examples/BuddyLeNet/subgraph1.ll
++#   DEPENDS ${BUDDY_EXAMPLES_DIR}/BuddyLeNet/subgraph1.mlir
++#   COMMENT "Building subgraph1.ll"
++#   VERBATIM)
++  
++# add_custom_command(
++#   OUTPUT subgraph1.o
++#   COMMAND ${LLVM_MLIR_BINARY_DIR}/clang++ ${BUDDY_BINARY_DIR}/../examples/BuddyLeNet/subgraph1.ll -L/usr/local/cuda/lib64 -lcudart -O3 -c -o ${BUDDY_BINARY_DIR}/../examples/BuddyLeNet/subgraph1.o
++#   DEPENDS ${BUDDY_BINARY_DIR}/../examples/BuddyLeNet/subgraph1.ll
++#   COMMENT "Building subgraph1.o"
++#   VERBATIM)
++
++add_custom_command(
++  OUTPUT subgraph1.o
++  COMMAND ${LLVM_MLIR_BINARY_DIR}/mlir-opt ${BUDDY_EXAMPLES_DIR}/BuddyLeNet/subgraph1.mlir 
+             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+           ${BUDDY_BINARY_DIR}/buddy-opt
+             -eliminate-empty-tensors
+@@ -44,17 +78,17 @@ add_custom_command(
+             -reconcile-unrealized-casts | 
+           ${LLVM_MLIR_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
+           ${LLVM_MLIR_BINARY_DIR}/llvm-as |
+-          ${LLVM_MLIR_BINARY_DIR}/llc -filetype=obj  -relocation-model=pic -O0 -o ${BUDDY_BINARY_DIR}/../examples/BuddyLeNet/subgraph0.o
+-  DEPENDS ${BUDDY_EXAMPLES_DIR}/BuddyLeNet/subgraph0.mlir
+-  COMMENT "Building subgraph0.o"
++          ${LLVM_MLIR_BINARY_DIR}/llc -filetype=obj  -relocation-model=pic -O0 -o ${BUDDY_BINARY_DIR}/../examples/BuddyLeNet/subgraph1.o
++  DEPENDS ${BUDDY_EXAMPLES_DIR}/BuddyLeNet/subgraph1.mlir
++  COMMENT "Building subgraph1.o"
+   VERBATIM)
+ 
+-add_library(LENET STATIC subgraph0.o forward.o)
++add_library(LENET STATIC subgraph0.o subgraph1.o forward.o)
+ 
+ SET_TARGET_PROPERTIES(LENET PROPERTIES LINKER_LANGUAGE C)
+ 
+ add_executable(buddy-lenet-run buddy-lenet-main.cpp)
+ target_link_directories(buddy-lenet-run PRIVATE ${LLVM_MLIR_LIBRARY_DIR})
+ 
+-set(BUDDY_LENET_LIBS LENET mlir_c_runner_utils ${OpenCV_LIBS})
++set(BUDDY_LENET_LIBS LENET mlir_c_runner_utils mlir_cuda_runtime ${OpenCV_LIBS})
+ target_link_libraries(buddy-lenet-run ${BUDDY_LENET_LIBS})
+diff --git a/examples/BuddyLeNet/buddy-lenet-import.py b/examples/BuddyLeNet/buddy-lenet-import.py
+index 95e76de..6f353fc 100644
+--- a/examples/BuddyLeNet/buddy-lenet-import.py
++++ b/examples/BuddyLeNet/buddy-lenet-import.py
+@@ -28,7 +28,9 @@ from torch._inductor.decomposition import decompositions as inductor_decomp
+ from buddy.compiler.frontend import DynamoCompiler
+ from buddy.compiler.graph import GraphDriver
+ from buddy.compiler.graph.transform import simply_fuse
+-from buddy.compiler.ops import tosa
++from buddy.compiler.graph.type import DeviceType
++from buddy.compiler.ops import tosa, gpu
++from buddy.compiler.graph.json_decoder import json_to_graph
+ from model import LeNet
+ 
+ # Retrieve the LeNet model path from environment variables.
+@@ -57,20 +59,48 @@ assert len(graphs) == 1
+ graph = graphs[0]
+ params = dynamo_compiler.imported_params[graph]
+ pattern_list = [simply_fuse]
+-graphs[0].fuse_ops(pattern_list)
+-driver = GraphDriver(graphs[0])
+-driver.subgraphs[0].lower_to_top_level_ir()
++graph.fuse_ops(pattern_list)
+ path_prefix = os.path.dirname(os.path.abspath(__file__))
++
++# Convert the lenet graph to JSON string
++json_str = graph.to_json()
++with open(os.path.join(path_prefix, "lenet.json"), "w") as module_file:
++    module_file.write(json_str)
++
++# Convert the lenet graph Json string to a lenet graph
++graph0 = json_to_graph(json_str)
++driver = GraphDriver(graph0)
++driver.subgraphs[0].lower_to_top_level_ir()
++driver.subgraphs[1].lower_to_top_level_ir()
++
+ with open(os.path.join(path_prefix, "subgraph0.mlir"), "w") as module_file:
+     print(driver.subgraphs[0]._imported_module, file=module_file)
++with open(os.path.join(path_prefix, "subgraph1.mlir"), "w") as module_file:
++    print(driver.subgraphs[1]._imported_module, file=module_file)
+ with open(os.path.join(path_prefix, "forward.mlir"), "w") as module_file:
+     print(driver.construct_main_graph(True), file=module_file)
+ 
+-params = dynamo_compiler.imported_params[graph]
+-current_path = os.path.dirname(os.path.abspath(__file__))
++# params = dynamo_compiler.imported_params[graph]
++# current_path = os.path.dirname(os.path.abspath(__file__))
+ 
+-float32_param = np.concatenate(
+-    [param.detach().numpy().reshape([-1]) for param in params]
+-)
++# float32_param = np.concatenate(
++#     [param.detach().numpy().reshape([-1]) for param in params]
++# )
++
++# float32_param.tofile(Path(current_path) / "arg0.data")
++
++# # Convert the lenet graph to JSON string
++# json_str = graph.to_json()
++# with open(os.path.join(path_prefix, "lenet.json"), "w") as module_file:
++#     module_file.write(json_str)
++
++# # Convert the lenet graph Json string to a lenet graph
++# graph0 = json_to_graph(json_str)
++# graph0.lower_to_top_level_ir()
++# with open(os.path.join(path_prefix, "lenet.mlir"), "w") as module_file:
++#     print(graph0._imported_module, file=module_file)
+ 
+-float32_param.tofile(Path(current_path) / "arg0.data")
++# # Convert the lenet graph to DOT string
++# dot_str = graph.to_dot()
++# with open(os.path.join(path_prefix, "graph.dot"), "w") as module_file:
++#     module_file.write(dot_str)
+\ No newline at end of file
+diff --git a/examples/BuddyLeNet/makefile b/examples/BuddyLeNet/makefile
+index 6f06642..8bc64fa 100644
+--- a/examples/BuddyLeNet/makefile
++++ b/examples/BuddyLeNet/makefile
+@@ -18,6 +18,12 @@ MLIR_ASYNC_RUNTIME := ./../llvm/build/lib/libmlir_async_runtime.dylib
+ MTRIPLE := x86_64-apple-darwin
+ endif
+ 
++test-lower:
++	${BUDDY_OPT} ./fake-lenet.mlir \
++	-pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" | \
++	${MLIR_OPT} \
++	-one-shot-bufferize="bufferize-function-boundaries=1 function-boundary-type-conversion=identity-layout-map" -convert-linalg-to-parallel-loops -canonicalize -gpu-map-parallel-loops -convert-parallel-loops-to-gpu -o tmp.mlir
++
+ buddy-lenet-lower:
+ 	@${MLIR_OPT} ./fake-lenet.mlir \
+ 		-pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" | \
+diff --git a/examples/BuddyLeNet/tmp.mlir b/examples/BuddyLeNet/tmp.mlir
+new file mode 100644
+index 0000000..f291fb4
+--- /dev/null
++++ b/examples/BuddyLeNet/tmp.mlir
+@@ -0,0 +1,555 @@
++#map = affine_map<(d0)[s0, s1] -> ((d0 - s0) ceildiv s1)>
++#map1 = affine_map<(d0)[s0, s1] -> (d0 * s0 + s1)>
++#map2 = affine_map<(d0, d1) -> (d0 + d1)>
++#map3 = affine_map<(d0, d1) -> (d0 * 2 + d1)>
++module {
++  memref.global "private" constant @__constant_1x1x28x28xf32 : memref<1x1x28x28xf32> = dense<2.000000e+00> {alignment = 64 : i64}
++  memref.global "private" constant @__constant_44426xf32 : memref<44426xf32> = dense<1.000000e+00> {alignment = 64 : i64}
++  memref.global "private" constant @__constant_1x84xf32 : memref<1x84xf32> = dense<0.000000e+00> {alignment = 64 : i64}
++  memref.global "private" constant @__constant_1x120xf32 : memref<1x120xf32> = dense<0.000000e+00> {alignment = 64 : i64}
++  memref.global "private" constant @__constant_2xi32 : memref<2xi32> = dense<[1, 0]> {alignment = 64 : i64}
++  memref.global "private" constant @__constant_1x16x8x8xf32 : memref<1x16x8x8xf32> = dense<0.000000e+00> {alignment = 64 : i64}
++  memref.global "private" constant @__constant_1x6x24x24xf32 : memref<1x6x24x24xf32> = dense<0.000000e+00> {alignment = 64 : i64}
++  memref.global "private" constant @__constant_4xi32_0 : memref<4xi32> = dense<[0, 3, 1, 2]> {alignment = 64 : i64}
++  memref.global "private" constant @__constant_4xi32 : memref<4xi32> = dense<[0, 2, 3, 1]> {alignment = 64 : i64}
++  func.func private @printMemrefF32(memref<*xf32>)
++  func.func @forward(%arg0: memref<44426xf32>, %arg1: memref<1x1x28x28xf32>) -> memref<1x10xf32> {
++    %c0 = arith.constant 0 : index
++    %c1 = arith.constant 1 : index
++    %c28 = arith.constant 28 : index
++    %c6 = arith.constant 6 : index
++    %c5 = arith.constant 5 : index
++    %c24 = arith.constant 24 : index
++    %c12 = arith.constant 12 : index
++    %c2 = arith.constant 2 : index
++    %c16 = arith.constant 16 : index
++    %c8 = arith.constant 8 : index
++    %c4 = arith.constant 4 : index
++    %c256 = arith.constant 256 : index
++    %c120 = arith.constant 120 : index
++    %c84 = arith.constant 84 : index
++    %c10 = arith.constant 10 : index
++    %cst = arith.constant -3.40282347E+38 : f32
++    %cst_0 = arith.constant 0.000000e+00 : f32
++    %subview = memref.subview %arg0[0] [150] [1] : memref<44426xf32> to memref<150xf32, strided<[1]>>
++    %expand_shape = memref.expand_shape %subview [[0, 1, 2, 3]] : memref<150xf32, strided<[1]>> into memref<6x1x5x5xf32>
++    %subview_1 = memref.subview %arg0[150] [6] [1] : memref<44426xf32> to memref<6xf32, strided<[1], offset: 150>>
++    %subview_2 = memref.subview %arg0[156] [2400] [1] : memref<44426xf32> to memref<2400xf32, strided<[1], offset: 156>>
++    %expand_shape_3 = memref.expand_shape %subview_2 [[0, 1, 2, 3]] : memref<2400xf32, strided<[1], offset: 156>> into memref<16x6x5x5xf32, strided<[150, 25, 5, 1], offset: 156>>
++    %subview_4 = memref.subview %arg0[2556] [16] [1] : memref<44426xf32> to memref<16xf32, strided<[1], offset: 2556>>
++    %subview_5 = memref.subview %arg0[2572] [30720] [1] : memref<44426xf32> to memref<30720xf32, strided<[1], offset: 2572>>
++    %expand_shape_6 = memref.expand_shape %subview_5 [[0, 1]] : memref<30720xf32, strided<[1], offset: 2572>> into memref<120x256xf32, strided<[256, 1], offset: 2572>>
++    %subview_7 = memref.subview %arg0[33292] [120] [1] : memref<44426xf32> to memref<120xf32, strided<[1], offset: 33292>>
++    %subview_8 = memref.subview %arg0[33412] [10080] [1] : memref<44426xf32> to memref<10080xf32, strided<[1], offset: 33412>>
++    %expand_shape_9 = memref.expand_shape %subview_8 [[0, 1]] : memref<10080xf32, strided<[1], offset: 33412>> into memref<84x120xf32, strided<[120, 1], offset: 33412>>
++    %subview_10 = memref.subview %arg0[43492] [84] [1] : memref<44426xf32> to memref<84xf32, strided<[1], offset: 43492>>
++    %subview_11 = memref.subview %arg0[43576] [840] [1] : memref<44426xf32> to memref<840xf32, strided<[1], offset: 43576>>
++    %expand_shape_12 = memref.expand_shape %subview_11 [[0, 1]] : memref<840xf32, strided<[1], offset: 43576>> into memref<10x84xf32, strided<[84, 1], offset: 43576>>
++    %subview_13 = memref.subview %arg0[44416] [10] [1] : memref<44426xf32> to memref<10xf32, strided<[1], offset: 44416>>
++    %alloc = memref.alloc() {alignment = 64 : i64} : memref<1x28x28x1xf32>
++    %c1_14 = arith.constant 1 : index
++    %0 = affine.apply #map(%c28)[%c0, %c1]
++    %1 = affine.apply #map(%c28)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %0, %arg9 = %1, %arg10 = %c1_14) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_14, %arg12 = %c1_14, %arg13 = %c1_14) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = memref.load %arg1[%c0, %c0, %86, %87] : memref<1x1x28x28xf32>
++      memref.store %88, %alloc[%c0, %86, %87, %c0] : memref<1x28x28x1xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %alloc_15 = memref.alloc() {alignment = 64 : i64} : memref<6x5x5x1xf32>
++    %c1_16 = arith.constant 1 : index
++    %2 = affine.apply #map(%c6)[%c0, %c1]
++    %3 = affine.apply #map(%c5)[%c0, %c1]
++    %4 = affine.apply #map(%c5)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %2, %arg9 = %3, %arg10 = %4) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_16, %arg12 = %c1_16, %arg13 = %c1_16) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      %89 = memref.load %expand_shape[%86, %c0, %87, %88] : memref<6x1x5x5xf32>
++      memref.store %89, %alloc_15[%86, %87, %88, %c0] : memref<6x5x5x1xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %alloc_17 = memref.alloc() {alignment = 64 : i64} : memref<1x24x24x6xf32>
++    %c1_18 = arith.constant 1 : index
++    %5 = affine.apply #map(%c24)[%c0, %c1]
++    %6 = affine.apply #map(%c24)[%c0, %c1]
++    %7 = affine.apply #map(%c6)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %5, %arg9 = %6, %arg10 = %7) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_18, %arg12 = %c1_18, %arg13 = %c1_18) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      memref.store %cst_0, %alloc_17[%c0, %86, %87, %88] : memref<1x24x24x6xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %alloc_19 = memref.alloc() {alignment = 64 : i64} : memref<1x24x24x6xf32>
++    %c1_20 = arith.constant 1 : index
++    %8 = affine.apply #map(%c24)[%c0, %c1]
++    %9 = affine.apply #map(%c24)[%c0, %c1]
++    %10 = affine.apply #map(%c6)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %8, %arg9 = %9, %arg10 = %10) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_20, %arg12 = %c1_20, %arg13 = %c1_20) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      scf.for %arg14 = %c0 to %c5 step %c1 {
++        scf.for %arg15 = %c0 to %c5 step %c1 {
++          %89 = affine.apply #map2(%86, %arg14)
++          %90 = affine.apply #map2(%87, %arg15)
++          %91 = memref.load %alloc[%c0, %89, %90, %c0] : memref<1x28x28x1xf32>
++          %92 = memref.load %alloc_15[%88, %arg14, %arg15, %c0] : memref<6x5x5x1xf32>
++          %93 = memref.load %alloc_17[%c0, %86, %87, %88] : memref<1x24x24x6xf32>
++          %94 = arith.mulf %91, %92 : f32
++          %95 = arith.addf %93, %94 : f32
++          memref.store %95, %alloc_17[%c0, %86, %87, %88] : memref<1x24x24x6xf32>
++        }
++      }
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %c1_21 = arith.constant 1 : index
++    %11 = affine.apply #map(%c24)[%c0, %c1]
++    %12 = affine.apply #map(%c24)[%c0, %c1]
++    %13 = affine.apply #map(%c6)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %11, %arg9 = %12, %arg10 = %13) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_21, %arg12 = %c1_21, %arg13 = %c1_21) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      %89 = memref.load %subview_1[%88] : memref<6xf32, strided<[1], offset: 150>>
++      %90 = memref.load %alloc_17[%c0, %86, %87, %88] : memref<1x24x24x6xf32>
++      %91 = arith.addf %89, %90 : f32
++      memref.store %91, %alloc_19[%c0, %86, %87, %88] : memref<1x24x24x6xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %alloc_22 = memref.alloc() {alignment = 64 : i64} : memref<1x6x24x24xf32>
++    %c1_23 = arith.constant 1 : index
++    %14 = affine.apply #map(%c6)[%c0, %c1]
++    %15 = affine.apply #map(%c24)[%c0, %c1]
++    %16 = affine.apply #map(%c24)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %14, %arg9 = %15, %arg10 = %16) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_23, %arg12 = %c1_23, %arg13 = %c1_23) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      %89 = memref.load %alloc_19[%c0, %87, %88, %86] : memref<1x24x24x6xf32>
++      memref.store %89, %alloc_22[%c0, %86, %87, %88] : memref<1x6x24x24xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %17 = memref.get_global @__constant_1x6x24x24xf32 : memref<1x6x24x24xf32>
++    %alloc_24 = memref.alloc() {alignment = 64 : i64} : memref<1x6x24x24xf32>
++    %c1_25 = arith.constant 1 : index
++    %18 = affine.apply #map(%c6)[%c0, %c1]
++    %19 = affine.apply #map(%c24)[%c0, %c1]
++    %20 = affine.apply #map(%c24)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %18, %arg9 = %19, %arg10 = %20) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_25, %arg12 = %c1_25, %arg13 = %c1_25) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      %89 = memref.load %alloc_22[%c0, %86, %87, %88] : memref<1x6x24x24xf32>
++      %90 = memref.load %17[%c0, %86, %87, %88] : memref<1x6x24x24xf32>
++      %91 = arith.maximumf %89, %90 : f32
++      memref.store %91, %alloc_24[%c0, %86, %87, %88] : memref<1x6x24x24xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %alloc_26 = memref.alloc() {alignment = 64 : i64} : memref<1x24x24x6xf32>
++    %c1_27 = arith.constant 1 : index
++    %21 = affine.apply #map(%c24)[%c0, %c1]
++    %22 = affine.apply #map(%c24)[%c0, %c1]
++    %23 = affine.apply #map(%c6)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %21, %arg9 = %22, %arg10 = %23) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_27, %arg12 = %c1_27, %arg13 = %c1_27) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      %89 = memref.load %alloc_24[%c0, %88, %86, %87] : memref<1x6x24x24xf32>
++      memref.store %89, %alloc_26[%c0, %86, %87, %88] : memref<1x24x24x6xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %alloc_28 = memref.alloc() {alignment = 64 : i64} : memref<1x12x12x6xf32>
++    %c1_29 = arith.constant 1 : index
++    %24 = affine.apply #map(%c12)[%c0, %c1]
++    %25 = affine.apply #map(%c12)[%c0, %c1]
++    %26 = affine.apply #map(%c6)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %24, %arg9 = %25, %arg10 = %26) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_29, %arg12 = %c1_29, %arg13 = %c1_29) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      memref.store %cst, %alloc_28[%c0, %86, %87, %88] : memref<1x12x12x6xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %c1_30 = arith.constant 1 : index
++    %27 = affine.apply #map(%c12)[%c0, %c1]
++    %28 = affine.apply #map(%c12)[%c0, %c1]
++    %29 = affine.apply #map(%c6)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %27, %arg9 = %28, %arg10 = %29) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_30, %arg12 = %c1_30, %arg13 = %c1_30) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      scf.for %arg14 = %c0 to %c2 step %c1 {
++        scf.for %arg15 = %c0 to %c2 step %c1 {
++          %89 = affine.apply #map3(%86, %arg14)
++          %90 = affine.apply #map3(%87, %arg15)
++          %91 = memref.load %alloc_26[%c0, %89, %90, %88] : memref<1x24x24x6xf32>
++          %92 = memref.load %alloc_28[%c0, %86, %87, %88] : memref<1x12x12x6xf32>
++          %93 = arith.maximumf %92, %91 : f32
++          memref.store %93, %alloc_28[%c0, %86, %87, %88] : memref<1x12x12x6xf32>
++        }
++      }
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %alloc_31 = memref.alloc() {alignment = 64 : i64} : memref<1x6x12x12xf32>
++    %c1_32 = arith.constant 1 : index
++    %30 = affine.apply #map(%c6)[%c0, %c1]
++    %31 = affine.apply #map(%c12)[%c0, %c1]
++    %32 = affine.apply #map(%c12)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %30, %arg9 = %31, %arg10 = %32) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_32, %arg12 = %c1_32, %arg13 = %c1_32) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      %89 = memref.load %alloc_28[%c0, %87, %88, %86] : memref<1x12x12x6xf32>
++      memref.store %89, %alloc_31[%c0, %86, %87, %88] : memref<1x6x12x12xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %alloc_33 = memref.alloc() {alignment = 64 : i64} : memref<1x12x12x6xf32>
++    %c1_34 = arith.constant 1 : index
++    %33 = affine.apply #map(%c12)[%c0, %c1]
++    %34 = affine.apply #map(%c12)[%c0, %c1]
++    %35 = affine.apply #map(%c6)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %33, %arg9 = %34, %arg10 = %35) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_34, %arg12 = %c1_34, %arg13 = %c1_34) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      %89 = memref.load %alloc_31[%c0, %88, %86, %87] : memref<1x6x12x12xf32>
++      memref.store %89, %alloc_33[%c0, %86, %87, %88] : memref<1x12x12x6xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %alloc_35 = memref.alloc() {alignment = 64 : i64} : memref<16x5x5x6xf32>
++    %c1_36 = arith.constant 1 : index
++    %36 = affine.apply #map(%c16)[%c0, %c1]
++    %37 = affine.apply #map(%c5)[%c0, %c1]
++    %38 = affine.apply #map(%c5)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %36, %arg9 = %37, %arg10 = %38) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_36, %arg12 = %c1_36, %arg13 = %c1_36) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      scf.for %arg14 = %c0 to %c6 step %c1 {
++        %89 = memref.load %expand_shape_3[%86, %arg14, %87, %88] : memref<16x6x5x5xf32, strided<[150, 25, 5, 1], offset: 156>>
++        memref.store %89, %alloc_35[%86, %87, %88, %arg14] : memref<16x5x5x6xf32>
++      }
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %alloc_37 = memref.alloc() {alignment = 64 : i64} : memref<1x8x8x16xf32>
++    %c1_38 = arith.constant 1 : index
++    %39 = affine.apply #map(%c8)[%c0, %c1]
++    %40 = affine.apply #map(%c8)[%c0, %c1]
++    %41 = affine.apply #map(%c16)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %39, %arg9 = %40, %arg10 = %41) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_38, %arg12 = %c1_38, %arg13 = %c1_38) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      memref.store %cst_0, %alloc_37[%c0, %86, %87, %88] : memref<1x8x8x16xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %alloc_39 = memref.alloc() {alignment = 64 : i64} : memref<1x8x8x16xf32>
++    %c1_40 = arith.constant 1 : index
++    %42 = affine.apply #map(%c8)[%c0, %c1]
++    %43 = affine.apply #map(%c8)[%c0, %c1]
++    %44 = affine.apply #map(%c16)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %42, %arg9 = %43, %arg10 = %44) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_40, %arg12 = %c1_40, %arg13 = %c1_40) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      scf.for %arg14 = %c0 to %c5 step %c1 {
++        scf.for %arg15 = %c0 to %c5 step %c1 {
++          scf.for %arg16 = %c0 to %c6 step %c1 {
++            %89 = affine.apply #map2(%86, %arg14)
++            %90 = affine.apply #map2(%87, %arg15)
++            %91 = memref.load %alloc_33[%c0, %89, %90, %arg16] : memref<1x12x12x6xf32>
++            %92 = memref.load %alloc_35[%88, %arg14, %arg15, %arg16] : memref<16x5x5x6xf32>
++            %93 = memref.load %alloc_37[%c0, %86, %87, %88] : memref<1x8x8x16xf32>
++            %94 = arith.mulf %91, %92 : f32
++            %95 = arith.addf %93, %94 : f32
++            memref.store %95, %alloc_37[%c0, %86, %87, %88] : memref<1x8x8x16xf32>
++          }
++        }
++      }
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %c1_41 = arith.constant 1 : index
++    %45 = affine.apply #map(%c8)[%c0, %c1]
++    %46 = affine.apply #map(%c8)[%c0, %c1]
++    %47 = affine.apply #map(%c16)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %45, %arg9 = %46, %arg10 = %47) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_41, %arg12 = %c1_41, %arg13 = %c1_41) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      %89 = memref.load %subview_4[%88] : memref<16xf32, strided<[1], offset: 2556>>
++      %90 = memref.load %alloc_37[%c0, %86, %87, %88] : memref<1x8x8x16xf32>
++      %91 = arith.addf %89, %90 : f32
++      memref.store %91, %alloc_39[%c0, %86, %87, %88] : memref<1x8x8x16xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %alloc_42 = memref.alloc() {alignment = 64 : i64} : memref<1x16x8x8xf32>
++    %c1_43 = arith.constant 1 : index
++    %48 = affine.apply #map(%c16)[%c0, %c1]
++    %49 = affine.apply #map(%c8)[%c0, %c1]
++    %50 = affine.apply #map(%c8)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %48, %arg9 = %49, %arg10 = %50) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_43, %arg12 = %c1_43, %arg13 = %c1_43) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      %89 = memref.load %alloc_39[%c0, %87, %88, %86] : memref<1x8x8x16xf32>
++      memref.store %89, %alloc_42[%c0, %86, %87, %88] : memref<1x16x8x8xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %51 = memref.get_global @__constant_1x16x8x8xf32 : memref<1x16x8x8xf32>
++    %alloc_44 = memref.alloc() {alignment = 64 : i64} : memref<1x16x8x8xf32>
++    %c1_45 = arith.constant 1 : index
++    %52 = affine.apply #map(%c16)[%c0, %c1]
++    %53 = affine.apply #map(%c8)[%c0, %c1]
++    %54 = affine.apply #map(%c8)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %52, %arg9 = %53, %arg10 = %54) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_45, %arg12 = %c1_45, %arg13 = %c1_45) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      %89 = memref.load %alloc_42[%c0, %86, %87, %88] : memref<1x16x8x8xf32>
++      %90 = memref.load %51[%c0, %86, %87, %88] : memref<1x16x8x8xf32>
++      %91 = arith.maximumf %89, %90 : f32
++      memref.store %91, %alloc_44[%c0, %86, %87, %88] : memref<1x16x8x8xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %alloc_46 = memref.alloc() {alignment = 64 : i64} : memref<1x8x8x16xf32>
++    %c1_47 = arith.constant 1 : index
++    %55 = affine.apply #map(%c8)[%c0, %c1]
++    %56 = affine.apply #map(%c8)[%c0, %c1]
++    %57 = affine.apply #map(%c16)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %55, %arg9 = %56, %arg10 = %57) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_47, %arg12 = %c1_47, %arg13 = %c1_47) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      %89 = memref.load %alloc_44[%c0, %88, %86, %87] : memref<1x16x8x8xf32>
++      memref.store %89, %alloc_46[%c0, %86, %87, %88] : memref<1x8x8x16xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %alloc_48 = memref.alloc() {alignment = 64 : i64} : memref<1x4x4x16xf32>
++    %c1_49 = arith.constant 1 : index
++    %58 = affine.apply #map(%c4)[%c0, %c1]
++    %59 = affine.apply #map(%c4)[%c0, %c1]
++    %60 = affine.apply #map(%c16)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %58, %arg9 = %59, %arg10 = %60) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_49, %arg12 = %c1_49, %arg13 = %c1_49) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      memref.store %cst, %alloc_48[%c0, %86, %87, %88] : memref<1x4x4x16xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %c1_50 = arith.constant 1 : index
++    %61 = affine.apply #map(%c4)[%c0, %c1]
++    %62 = affine.apply #map(%c4)[%c0, %c1]
++    %63 = affine.apply #map(%c16)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %61, %arg9 = %62, %arg10 = %63) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_50, %arg12 = %c1_50, %arg13 = %c1_50) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      scf.for %arg14 = %c0 to %c2 step %c1 {
++        scf.for %arg15 = %c0 to %c2 step %c1 {
++          %89 = affine.apply #map3(%86, %arg14)
++          %90 = affine.apply #map3(%87, %arg15)
++          %91 = memref.load %alloc_46[%c0, %89, %90, %88] : memref<1x8x8x16xf32>
++          %92 = memref.load %alloc_48[%c0, %86, %87, %88] : memref<1x4x4x16xf32>
++          %93 = arith.maximumf %92, %91 : f32
++          memref.store %93, %alloc_48[%c0, %86, %87, %88] : memref<1x4x4x16xf32>
++        }
++      }
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %alloc_51 = memref.alloc() {alignment = 64 : i64} : memref<1x16x4x4xf32>
++    %c1_52 = arith.constant 1 : index
++    %64 = affine.apply #map(%c16)[%c0, %c1]
++    %65 = affine.apply #map(%c4)[%c0, %c1]
++    %66 = affine.apply #map(%c4)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %64, %arg9 = %65, %arg10 = %66) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_52, %arg12 = %c1_52, %arg13 = %c1_52) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = affine.apply #map1(%arg4)[%c1, %c0]
++      %89 = memref.load %alloc_48[%c0, %87, %88, %86] : memref<1x4x4x16xf32>
++      memref.store %89, %alloc_51[%c0, %86, %87, %88] : memref<1x16x4x4xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %alloc_53 = memref.alloc() {alignment = 64 : i64} : memref<256x120xf32>
++    %c1_54 = arith.constant 1 : index
++    %67 = affine.apply #map(%c256)[%c0, %c1]
++    %68 = affine.apply #map(%c120)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %67, %arg9 = %68, %arg10 = %c1_54) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_54, %arg12 = %c1_54, %arg13 = %c1_54) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = memref.load %expand_shape_6[%87, %86] : memref<120x256xf32, strided<[256, 1], offset: 2572>>
++      memref.store %88, %alloc_53[%86, %87] : memref<256x120xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %collapse_shape = memref.collapse_shape %alloc_51 [[0], [1, 2, 3]] : memref<1x16x4x4xf32> into memref<1x256xf32>
++    %expand_shape_55 = memref.expand_shape %collapse_shape [[0, 1], [2]] : memref<1x256xf32> into memref<1x1x256xf32>
++    %expand_shape_56 = memref.expand_shape %alloc_53 [[0, 1], [2]] : memref<256x120xf32> into memref<1x256x120xf32>
++    %alloc_57 = memref.alloc() {alignment = 64 : i64} : memref<1x1x120xf32>
++    %c1_58 = arith.constant 1 : index
++    %69 = affine.apply #map(%c120)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %69, %arg9 = %c1_58, %arg10 = %c1_58) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_58, %arg12 = %c1_58, %arg13 = %c1_58) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      memref.store %cst_0, %alloc_57[%c0, %c0, %86] : memref<1x1x120xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %c1_59 = arith.constant 1 : index
++    %70 = affine.apply #map(%c120)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %70, %arg9 = %c1_59, %arg10 = %c1_59) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_59, %arg12 = %c1_59, %arg13 = %c1_59) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      scf.for %arg14 = %c0 to %c256 step %c1 {
++        %87 = memref.load %expand_shape_55[%c0, %c0, %arg14] : memref<1x1x256xf32>
++        %88 = memref.load %expand_shape_56[%c0, %arg14, %86] : memref<1x256x120xf32>
++        %89 = memref.load %alloc_57[%c0, %c0, %86] : memref<1x1x120xf32>
++        %90 = arith.mulf %87, %88 : f32
++        %91 = arith.addf %89, %90 : f32
++        memref.store %91, %alloc_57[%c0, %c0, %86] : memref<1x1x120xf32>
++      }
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %collapse_shape_60 = memref.collapse_shape %alloc_57 [[0, 1], [2]] : memref<1x1x120xf32> into memref<1x120xf32>
++    %expand_shape_61 = memref.expand_shape %subview_7 [[0, 1]] : memref<120xf32, strided<[1], offset: 33292>> into memref<1x120xf32, strided<[120, 1], offset: 33292>>
++    %alloc_62 = memref.alloc() {alignment = 64 : i64} : memref<1x120xf32>
++    %c1_63 = arith.constant 1 : index
++    %71 = affine.apply #map(%c120)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %71, %arg9 = %c1_63, %arg10 = %c1_63) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_63, %arg12 = %c1_63, %arg13 = %c1_63) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = memref.load %expand_shape_61[%c0, %86] : memref<1x120xf32, strided<[120, 1], offset: 33292>>
++      %88 = memref.load %collapse_shape_60[%c0, %86] : memref<1x120xf32>
++      %89 = arith.addf %87, %88 : f32
++      memref.store %89, %alloc_62[%c0, %86] : memref<1x120xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %72 = memref.get_global @__constant_1x120xf32 : memref<1x120xf32>
++    %alloc_64 = memref.alloc() {alignment = 64 : i64} : memref<1x120xf32>
++    %c1_65 = arith.constant 1 : index
++    %73 = affine.apply #map(%c120)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %73, %arg9 = %c1_65, %arg10 = %c1_65) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_65, %arg12 = %c1_65, %arg13 = %c1_65) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = memref.load %alloc_62[%c0, %86] : memref<1x120xf32>
++      %88 = memref.load %72[%c0, %86] : memref<1x120xf32>
++      %89 = arith.maximumf %87, %88 : f32
++      memref.store %89, %alloc_64[%c0, %86] : memref<1x120xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %alloc_66 = memref.alloc() {alignment = 64 : i64} : memref<120x84xf32>
++    %c1_67 = arith.constant 1 : index
++    %74 = affine.apply #map(%c120)[%c0, %c1]
++    %75 = affine.apply #map(%c84)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %74, %arg9 = %75, %arg10 = %c1_67) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_67, %arg12 = %c1_67, %arg13 = %c1_67) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = memref.load %expand_shape_9[%87, %86] : memref<84x120xf32, strided<[120, 1], offset: 33412>>
++      memref.store %88, %alloc_66[%86, %87] : memref<120x84xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %expand_shape_68 = memref.expand_shape %alloc_64 [[0, 1], [2]] : memref<1x120xf32> into memref<1x1x120xf32>
++    %expand_shape_69 = memref.expand_shape %alloc_66 [[0, 1], [2]] : memref<120x84xf32> into memref<1x120x84xf32>
++    %alloc_70 = memref.alloc() {alignment = 64 : i64} : memref<1x1x84xf32>
++    %c1_71 = arith.constant 1 : index
++    %76 = affine.apply #map(%c84)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %76, %arg9 = %c1_71, %arg10 = %c1_71) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_71, %arg12 = %c1_71, %arg13 = %c1_71) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      memref.store %cst_0, %alloc_70[%c0, %c0, %86] : memref<1x1x84xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %c1_72 = arith.constant 1 : index
++    %77 = affine.apply #map(%c84)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %77, %arg9 = %c1_72, %arg10 = %c1_72) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_72, %arg12 = %c1_72, %arg13 = %c1_72) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      scf.for %arg14 = %c0 to %c120 step %c1 {
++        %87 = memref.load %expand_shape_68[%c0, %c0, %arg14] : memref<1x1x120xf32>
++        %88 = memref.load %expand_shape_69[%c0, %arg14, %86] : memref<1x120x84xf32>
++        %89 = memref.load %alloc_70[%c0, %c0, %86] : memref<1x1x84xf32>
++        %90 = arith.mulf %87, %88 : f32
++        %91 = arith.addf %89, %90 : f32
++        memref.store %91, %alloc_70[%c0, %c0, %86] : memref<1x1x84xf32>
++      }
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %collapse_shape_73 = memref.collapse_shape %alloc_70 [[0, 1], [2]] : memref<1x1x84xf32> into memref<1x84xf32>
++    %expand_shape_74 = memref.expand_shape %subview_10 [[0, 1]] : memref<84xf32, strided<[1], offset: 43492>> into memref<1x84xf32, strided<[84, 1], offset: 43492>>
++    %alloc_75 = memref.alloc() {alignment = 64 : i64} : memref<1x84xf32>
++    %c1_76 = arith.constant 1 : index
++    %78 = affine.apply #map(%c84)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %78, %arg9 = %c1_76, %arg10 = %c1_76) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_76, %arg12 = %c1_76, %arg13 = %c1_76) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = memref.load %expand_shape_74[%c0, %86] : memref<1x84xf32, strided<[84, 1], offset: 43492>>
++      %88 = memref.load %collapse_shape_73[%c0, %86] : memref<1x84xf32>
++      %89 = arith.addf %87, %88 : f32
++      memref.store %89, %alloc_75[%c0, %86] : memref<1x84xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %79 = memref.get_global @__constant_1x84xf32 : memref<1x84xf32>
++    %alloc_77 = memref.alloc() {alignment = 64 : i64} : memref<1x84xf32>
++    %c1_78 = arith.constant 1 : index
++    %80 = affine.apply #map(%c84)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %80, %arg9 = %c1_78, %arg10 = %c1_78) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_78, %arg12 = %c1_78, %arg13 = %c1_78) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = memref.load %alloc_75[%c0, %86] : memref<1x84xf32>
++      %88 = memref.load %79[%c0, %86] : memref<1x84xf32>
++      %89 = arith.maximumf %87, %88 : f32
++      memref.store %89, %alloc_77[%c0, %86] : memref<1x84xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %alloc_79 = memref.alloc() {alignment = 64 : i64} : memref<84x10xf32>
++    %c1_80 = arith.constant 1 : index
++    %81 = affine.apply #map(%c84)[%c0, %c1]
++    %82 = affine.apply #map(%c10)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %81, %arg9 = %82, %arg10 = %c1_80) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_80, %arg12 = %c1_80, %arg13 = %c1_80) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = affine.apply #map1(%arg3)[%c1, %c0]
++      %88 = memref.load %expand_shape_12[%87, %86] : memref<10x84xf32, strided<[84, 1], offset: 43576>>
++      memref.store %88, %alloc_79[%86, %87] : memref<84x10xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %expand_shape_81 = memref.expand_shape %alloc_77 [[0, 1], [2]] : memref<1x84xf32> into memref<1x1x84xf32>
++    %expand_shape_82 = memref.expand_shape %alloc_79 [[0, 1], [2]] : memref<84x10xf32> into memref<1x84x10xf32>
++    %alloc_83 = memref.alloc() {alignment = 64 : i64} : memref<1x1x10xf32>
++    %c1_84 = arith.constant 1 : index
++    %83 = affine.apply #map(%c10)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %83, %arg9 = %c1_84, %arg10 = %c1_84) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_84, %arg12 = %c1_84, %arg13 = %c1_84) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      memref.store %cst_0, %alloc_83[%c0, %c0, %86] : memref<1x1x10xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %c1_85 = arith.constant 1 : index
++    %84 = affine.apply #map(%c10)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %84, %arg9 = %c1_85, %arg10 = %c1_85) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_85, %arg12 = %c1_85, %arg13 = %c1_85) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      scf.for %arg14 = %c0 to %c84 step %c1 {
++        %87 = memref.load %expand_shape_81[%c0, %c0, %arg14] : memref<1x1x84xf32>
++        %88 = memref.load %expand_shape_82[%c0, %arg14, %86] : memref<1x84x10xf32>
++        %89 = memref.load %alloc_83[%c0, %c0, %86] : memref<1x1x10xf32>
++        %90 = arith.mulf %87, %88 : f32
++        %91 = arith.addf %89, %90 : f32
++        memref.store %91, %alloc_83[%c0, %c0, %86] : memref<1x1x10xf32>
++      }
++      gpu.terminator
++    } {SCFToGPU_visited}
++    %collapse_shape_86 = memref.collapse_shape %alloc_83 [[0, 1], [2]] : memref<1x1x10xf32> into memref<1x10xf32>
++    %expand_shape_87 = memref.expand_shape %subview_13 [[0, 1]] : memref<10xf32, strided<[1], offset: 44416>> into memref<1x10xf32, strided<[10, 1], offset: 44416>>
++    %alloc_88 = memref.alloc() {alignment = 64 : i64} : memref<1x10xf32>
++    %c1_89 = arith.constant 1 : index
++    %85 = affine.apply #map(%c10)[%c0, %c1]
++    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %85, %arg9 = %c1_89, %arg10 = %c1_89) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_89, %arg12 = %c1_89, %arg13 = %c1_89) {
++      %86 = affine.apply #map1(%arg2)[%c1, %c0]
++      %87 = memref.load %expand_shape_87[%c0, %86] : memref<1x10xf32, strided<[10, 1], offset: 44416>>
++      %88 = memref.load %collapse_shape_86[%c0, %86] : memref<1x10xf32>
++      %89 = arith.addf %87, %88 : f32
++      memref.store %89, %alloc_88[%c0, %86] : memref<1x10xf32>
++      gpu.terminator
++    } {SCFToGPU_visited}
++    return %alloc_88 : memref<1x10xf32>
++  }
++  func.func @main() {
++    %0 = memref.get_global @__constant_44426xf32 : memref<44426xf32>
++    %1 = memref.get_global @__constant_1x1x28x28xf32 : memref<1x1x28x28xf32>
++    %2 = call @forward(%0, %1) : (memref<44426xf32>, memref<1x1x28x28xf32>) -> memref<1x10xf32>
++    %cast = memref.cast %2 : memref<1x10xf32> to memref<*xf32>
++    call @printMemrefF32(%cast) : (memref<*xf32>) -> ()
++    return
++  }
++}
++
+diff --git a/examples/BuddyTest/.gitignore b/examples/BuddyTest/.gitignore
+index 6e9797b..081f173 100644
+--- a/examples/BuddyTest/.gitignore
++++ b/examples/BuddyTest/.gitignore
+@@ -1,2 +1,3 @@
+ __pycache__
+-forward.mlir
++*.mlir
++log.ll
+diff --git a/examples/BuddyTest/CMakeLists.txt b/examples/BuddyTest/CMakeLists.txt
+new file mode 100644
+index 0000000..8039bfc
+--- /dev/null
++++ b/examples/BuddyTest/CMakeLists.txt
+@@ -0,0 +1,29 @@
++add_custom_command(
++  OUTPUT ${BUDDY_EXAMPLES_DIR}/BuddyTest/forward.mlir
++  COMMAND python3 ${BUDDY_EXAMPLES_DIR}/BuddyTest/import-test.py
++  COMMENT "Generating forward.mlir"
++)
++
++
++add_custom_command(
++  OUTPUT forward.o
++  COMMAND ${LLVM_MLIR_BINARY_DIR}/mlir-opt ${BUDDY_EXAMPLES_DIR}/BuddyTest/forward.mlir -gpu-kernel-outlining -llvm-request-c-wrappers -convert-vector-to-scf -convert-vector-to-llvm |
++          ${LLVM_MLIR_BINARY_DIR}/mlir-opt 
++            -pass-pipeline "builtin.module(nvvm-attach-target{chip=sm_75 O=3},  gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-arith-to-llvm), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts, gpu-module-to-binary)" |
++          ${LLVM_MLIR_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
++          ${LLVM_MLIR_BINARY_DIR}/llvm-as |
++          ${LLVM_MLIR_BINARY_DIR}/llc -filetype=obj  -relocation-model=pic -O3 -o ${BUDDY_BINARY_DIR}/../examples/BuddyTest/forward.o
++  DEPENDS ${BUDDY_EXAMPLES_DIR}/BuddyTest/forward.mlir
++  COMMENT "Building forward.o"
++  VERBATIM)
++  
++  
++add_library(TEST STATIC forward.o)
++
++SET_TARGET_PROPERTIES(TEST PROPERTIES LINKER_LANGUAGE C)
++
++add_executable(buddy-test-run test-main.cpp)
++target_link_directories(buddy-test-run PRIVATE ${LLVM_MLIR_LIBRARY_DIR})
++
++set(BUDDY_TEST_LIBS TEST mlir_runner_utils mlir_cuda_runtime)
++target_link_libraries(buddy-test-run ${BUDDY_TEST_LIBS})
+diff --git a/examples/BuddyTest/README.md b/examples/BuddyTest/README.md
+new file mode 100644
+index 0000000..f057723
+--- /dev/null
++++ b/examples/BuddyTest/README.md
+@@ -0,0 +1,65 @@
++# Buddy Compiler Test Example
++
++0. Activate your python environment.
++
++1. Build LLVM/MLIR
++
++```bash
++$ cd buddy-mlir
++$ mkdir llvm/build
++$ cd llvm/build
++$ cmake -G Ninja ../llvm \
++    -DLLVM_ENABLE_PROJECTS="mlir;clang;openmp" \
++    -DLLVM_TARGETS_TO_BUILD="host;NVPTX" \
++    -DMLIR_ENABLE_CUDA_RUNNER=ON \
++    -DLLVM_ENABLE_ASSERTIONS=ON \
++    -DOPENMP_ENABLE_LIBOMPTARGET=OFF \
++    -DCMAKE_BUILD_TYPE=RELEASE \
++    -DMLIR_ENABLE_BINDINGS_PYTHON=ON \
++    -DPython3_EXECUTABLE=$(which python3)
++$ ninja check-clang check-mlir omp
++```
++
++2. Build buddy-mlir
++
++```bash
++$ mkdir build && cd build
++$ cmake -G Ninja .. \
++    -DMLIR_DIR=$PWD/../llvm/build/lib/cmake/mlir \
++    -DLLVM_DIR=$PWD/../llvm/build/lib/cmake/llvm \
++    -DLLVM_ENABLE_ASSERTIONS=ON \
++    -DCMAKE_BUILD_TYPE=RELEASE \
++    -DBUDDY_MLIR_ENABLE_PYTHON_PACKAGES=ON \
++    -DPython3_EXECUTABLE=$(which python3) 
++$ ninja
++$ ninja check-buddy
++```
++
++3. Set the `PYTHONPATH` environment variable.
++
++Make sure you are in the build directory.
++
++```bash
++$ export BUDDY_MLIR_BUILD_DIR=$PWD
++$ export LLVM_MLIR_BUILD_DIR=$PWD/../llvm/build
++$ export PYTHONPATH=${LLVM_MLIR_BUILD_DIR}/tools/mlir/python_packages/mlir_core:${BUDDY_MLIR_BUILD_DIR}/python_packages:${PYTHONPATH}
++```
++
++4. Build and run the Test example
++
++```bash
++$ cmake -G Ninja .. -DBUDDY_TEST_EXAMPLES=ON
++$ ninja buddy-test-run
++$ cd bin
++$ ./buddy-test-run
++```
++
++## Debug the Lowering Pass Pipeline with Fake Parameters.
++
++```bash
++$ cd buddy-mlir
++$ cd examples/BuddyTest
++$ make gpu-test-lower
++$ make gpu-test-translate
++$ make gpu-test-run
++```
+diff --git a/examples/BuddyTest/import-test.py b/examples/BuddyTest/import-test.py
+index b47bba9..79620d9 100644
+--- a/examples/BuddyTest/import-test.py
++++ b/examples/BuddyTest/import-test.py
+@@ -40,16 +40,16 @@ dynamo_compiler = DynamoCompiler(
+     aot_autograd_decomposition=inductor_decomp,
+ )
+ 
+-data = torch.randn([1, 1, 28, 28])
++data = torch.randn([1, 1, 12, 10])
+ # Import the model into MLIR module and parameters.
+ with torch.no_grad():
+     graphs = dynamo_compiler.importer(model, data)
+ 
+ assert len(graphs) == 1
+ graph = graphs[0]
+-print(graph._body)
++print(graph.body)
+ graph.lower_to_top_level_ir()
+ path_prefix = os.path.dirname(os.path.abspath(__file__))
+ with open(os.path.join(path_prefix, "forward.mlir"), "w") as module_file:
+     print(graph._imported_module, file=module_file)
+-    
+\ No newline at end of file
++      
+\ No newline at end of file
+diff --git a/examples/BuddyTest/makefile b/examples/BuddyTest/makefile
+new file mode 100644
+index 0000000..a931b82
+--- /dev/null
++++ b/examples/BuddyTest/makefile
+@@ -0,0 +1,64 @@
++#!/bin/bash
++BUDDY_OPT := ../../build/bin/buddy-opt
++MLIR_OPT := ../../llvm/build/bin/mlir-opt
++MLIR_TRANSLATE := ../../llvm/build/bin/mlir-translate
++MLIR_CPU_RUNNER := ../../llvm/build/bin/mlir-cpu-runner
++LLC := ../../llvm/build/bin/llc
++OPT_FLAG := -O0
++
++ifeq ($(shell uname),Linux)
++MLIR_RUNNER_UTILS := ../../llvm/build/lib/libmlir_runner_utils.so
++MLIR_C_RUNNER_UTILS := ../../llvm/build/lib/libmlir_c_runner_utils.so
++MLIR_ASYNC_RUNTIME := ../../llvm/build/lib/libmlir_async_runtime.so
++MLIR_CUDA_RUNTIME := ../../llvm/build/lib/libmlir_cuda_runtime.so
++MTRIPLE := x86_64-unknown-linux-gnu
++else ifeq ($(shell uname),Darwin)
++MLIR_RUNNER_UTILS := ../../llvm/build/lib/libmlir_runner_utils.dylib
++MLIR_C_RUNNER_UTILS := ../../llvm/build/lib/libmlir_c_runner_utils.dylib
++MLIR_ASYNC_RUNTIME := ./../llvm/build/lib/libmlir_async_runtime.dylib
++MTRIPLE := x86_64-apple-darwin
++endif
++
++kernel.ptx: forward.mlir
++	@${BUDDY_OPT} $< -gpu-kernel-outlining -convert-vector-to-scf -convert-vector-to-llvm -func-bufferize-dynamic-offset -tensor-bufferize -buffer-deallocation -finalizing-bufferize -expand-strided-metadata  -one-shot-bufferize  | \
++	${MLIR_OPT} -pass-pipeline "builtin.module(gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-nvvm-to-llvm,convert-arith-to-llvm, gpu-to-cubin{chip=sm_70 features=+ptx32}), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts)" | \
++	${MLIR_OPT} > /dev/null
++
++kernel-outlining:
++	@${BUDDY_OPT} forward.mlir -gpu-kernel-outlining -convert-vector-to-scf -convert-vector-to-llvm -func-bufferize-dynamic-offset -tensor-bufferize -buffer-deallocation -finalizing-bufferize -expand-strided-metadata  -one-shot-bufferize  | \
++	${MLIR_OPT} -o tmp.mlir
++
++gpu-test-lower:
++	@${BUDDY_OPT} forward.mlir -gpu-kernel-outlining -convert-vector-to-scf -convert-vector-to-llvm -func-bufferize-dynamic-offset -tensor-bufferize -buffer-deallocation -finalizing-bufferize -expand-strided-metadata  -one-shot-bufferize  | \
++	${MLIR_OPT} -pass-pipeline "builtin.module(gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-nvvm-to-llvm,convert-arith-to-llvm, gpu-to-cubin{chip=sm_70 features=+ptx32}), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts)" | \
++	${MLIR_OPT} -o log.mlir
++
++gpu-test-translate:
++	@${MLIR_OPT} forward.mlir -gpu-kernel-outlining -llvm-request-c-wrappers -convert-vector-to-scf -convert-vector-to-llvm | \
++	${MLIR_OPT} -pass-pipeline="builtin.module(nvvm-attach-target{chip=sm_70 O=3},\
++	gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-arith-to-llvm), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts, gpu-module-to-binary)" | \
++	${MLIR_TRANSLATE} -mlir-to-llvmir -o log.ll
++
++gpu-test-run:
++	@${MLIR_OPT} forward.mlir -gpu-kernel-outlining -llvm-request-c-wrappers -convert-vector-to-scf -convert-vector-to-llvm | \
++	${MLIR_OPT} -pass-pipeline="builtin.module(nvvm-attach-target{chip=sm_70 O=3},\
++	gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-arith-to-llvm), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts, gpu-module-to-binary)" | \
++	${MLIR_CPU_RUNNER} -entry-point-result=void -shared-libs=${MLIR_RUNNER_UTILS} -shared-libs=${MLIR_CUDA_RUNTIME} 
++
++gpu-conv2d-lower:
++	@${MLIR_OPT} conv2d.mlir -gpu-kernel-outlining -llvm-request-c-wrappers -convert-vector-to-scf -convert-vector-to-llvm | \
++	${MLIR_OPT} -pass-pipeline="builtin.module(nvvm-attach-target{chip=sm_70 O=3},\
++	gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-arith-to-llvm), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts, gpu-module-to-binary)" | \
++	${MLIR_OPT} -o log.mlir
++
++gpu-conv2d-translate:
++	@${MLIR_OPT} conv2d.mlir -gpu-kernel-outlining -llvm-request-c-wrappers | \
++	${MLIR_OPT} -pass-pipeline="builtin.module(nvvm-attach-target{chip=sm_70 O=3},\
++	gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-arith-to-llvm), convert-scf-to-cf, gpu-to-llvm, gpu-module-to-binary)" | \
++	${MLIR_TRANSLATE} -mlir-to-llvmir -o log.ll
++
++gpu-conv2d-run:
++	@${MLIR_OPT} conv2d.mlir -gpu-kernel-outlining -llvm-request-c-wrappers -convert-vector-to-scf -convert-vector-to-llvm | \
++	${MLIR_OPT} -pass-pipeline="builtin.module(nvvm-attach-target{chip=sm_70 O=3},\
++	gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-arith-to-llvm), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts, gpu-module-to-binary)" | \
++	${MLIR_CPU_RUNNER} -entry-point-result=void -shared-libs=${MLIR_RUNNER_UTILS} -shared-libs=${MLIR_CUDA_RUNTIME} 
+diff --git a/examples/BuddyTest/model.py b/examples/BuddyTest/model.py
+index 67f3bfd..d72af61 100644
+--- a/examples/BuddyTest/model.py
++++ b/examples/BuddyTest/model.py
+@@ -24,7 +24,14 @@ import torch.nn as nn
+ class TestModule(nn.Module):
+     def __init__(self):
+         super(TestModule, self).__init__()
++        self.conv1 = nn.Conv2d(1, 6, 5)
++        self.pool = nn.MaxPool2d(2, 2)
++        self.fc1 = nn.Linear(120,84)
+ 
+     def forward(self, x):
+-        x = torch.relu(x.view(2, 14, 28))
+-        return x.permute([1, 2, 0])
++        # x = self.conv1(x)
++        # x = self.pool(x)
++        x = x.view(-1, 120)
++        x = self.fc1(x)
++        return x
++    
+diff --git a/examples/BuddyTest/test-main.cpp b/examples/BuddyTest/test-main.cpp
+new file mode 100644
+index 0000000..d1764bc
+--- /dev/null
++++ b/examples/BuddyTest/test-main.cpp
+@@ -0,0 +1,115 @@
++//===- test-main.cpp ------------------------------------------------------===//
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//     http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++//
++//===----------------------------------------------------------------------===//
++
++#include <buddy/Core/Container.h>
++#include <buddy/LLM/TextContainer.h>
++#include <filesystem>
++#include <limits>
++#include <string>
++#include <utility>
++#include <vector>
++
++using namespace buddy;
++
++// extern "C" void
++// _mlir_ciface_forward(MemRef<float, 4> *result, MemRef<float, 4> *filter, MemRef<float, 1> *bias, MemRef<float, 4> *input);
++
++extern "C" void
++_mlir_ciface_forward(MemRef<float, 4> *result, MemRef<float, 4> *input);
++
++int main() {
++  /// Initialize data containers.
++  const int N = 1;
++  const int C = 1;
++  const int K = 1;
++  const int kernel_size = 2;
++  const int stride = 2;
++  const int H = 32;
++  const int W = 32;
++  const int H_out = H / kernel_size;
++  const int W_out = W / kernel_size;
++
++  MemRef<float, 4> input({N, C, H, W});  
++  // MemRef<float, 4> filter({K, C, kernel_size, kernel_size});  
++  // MemRef<float, 1> bias({K});  
++  MemRef<float, 4> result({N, C, H_out, W_out});
++
++  // Initial the input data
++  for (int n = 0; n < N; n++) { 
++    for (int c = 0; c < C; c++) {
++      for (int i = 0; i < H; i++) {
++        for (int j = 0; j < W; j++) {
++          int index = n * C * H * W + c * H * W + i * W + j;
++          input[index] = static_cast<float>((float)index/(H*W));
++        }
++      }
++    }
++  }
++  // for (int k = 0; k < K; k++) { 
++  //   for (int c = 0; c < C; c++) {
++  //     for (int i = 0; i < kernel_size; i++) {
++  //       for (int j = 0; j < kernel_size; j++) {
++  //         int index = k * C * kernel_size * kernel_size + c * kernel_size * kernel_size + i * kernel_size + j;
++  //         filter[index] = static_cast<float>(1);
++  //       }
++  //     }
++  //   }
++  // }
++  
++  // for (int k = 0; k < K; k++) {
++  //   bias[k] = 1; 
++  // }
++
++  // Print the generated data to verify
++
++  // for (int i = 0; i < H; i++) {
++  //   for (int j = 0; j < W; j++) {
++  //     std::cout << input[i * W + j] << " ";
++  //   }
++  //   std::cout << std::endl;
++  // }
++
++  const auto inferenceStart = std::chrono::high_resolution_clock::now();
++
++  /// Execute forward inference of the model.
++  _mlir_ciface_forward(&result, &input);
++  
++  const auto inferenceEnd = std::chrono::high_resolution_clock::now();
++  const std::chrono::duration<double, std::milli> inferenceTime =
++        inferenceEnd - inferenceStart;
++
++  /// Print the output data for verification.
++  std::cout << "\033[33;1m[Output] \033[0m";
++  std::cout << "[";
++  for (int i = 0; i < H_out; i++) {
++    if (i > 0) std::cout << " ";
++    std::cout << "[";
++    for (int j = 0; j < W_out; j++) {
++      if (j > 0) std::cout << " ";
++      std::cout << result[i * W_out + j];
++    }
++    std::cout << "]";
++    if (i < H_out - 1) std::cout << "\n ";
++  }
++  std::cout << "]" << std::endl;
++
++  /// Print the performance.
++  std::cout << "\033[33;1m[Time] \033[0m";
++  std::cout << inferenceTime.count() << " ms"
++            << std::endl;
++
++  return 0;
++}
+diff --git a/examples/BuddyTest/vector_add b/examples/BuddyTest/vector_add
+new file mode 100755
+index 0000000..eb0db03
+Binary files /dev/null and b/examples/BuddyTest/vector_add differ
+diff --git a/examples/BuddyTest/vector_add.cu b/examples/BuddyTest/vector_add.cu
+new file mode 100644
+index 0000000..ca92cb7
+--- /dev/null
++++ b/examples/BuddyTest/vector_add.cu
+@@ -0,0 +1,37 @@
++#include <stdio.h>
++#include <cuda_runtime.h>
++__global__ void vector_addition_gpu(int *a, int *b, int *result, int n) {
++    int i = blockIdx.x * blockDim.x + threadIdx.x;
++    if (i < n) {
++        result[i] = a[i] * b[i];
++    }
++}
++int main() {
++    // 分配内存并初始化向量数据
++    int *d_a, *d_b, *d_result;
++    int n = 5;
++    int a[] = {1, 2, 3, 4, 5};
++    int b[] = {5, 4, 3, 2, 1};
++    int result[n];
++    // 在GPU上分配内存
++    sstCudaMalloc((void**)&d_a, n * sizeof(int));
++    sstCudaMalloc((void**)&d_b, n * sizeof(int));
++    sstCudaMalloc((void**)&d_result, n * sizeof(int));
++    // 将数据从主机复制到设备
++    sstCudaMemcpy(d_a, a, n * sizeof(int), cudaMemcpyHostToDevice);
++    sstCudaMemcpy(d_b, b, n * sizeof(int), cudaMemcpyHostToDevice);
++    // 调用内核函数执行向量加法
++    vector_addition_gpu<<<1, n>>>(d_a, d_b, d_result, n);
++    // 将计算结果从设备复制回主机
++    sstCudaMemcpy(result, d_result, n * sizeof(int), cudaMemcpyDeviceToHost);
++    // 释放内存
++    // cudaFree(d_a);
++    // cudaFree(d_b);
++    // cudaFree(d_result);
++    // 打印GPU版本向量加法结果
++    for (int i = 0; i < n; i++) {
++        
++        printf("%d ", result[i]);
++    }
++    return 0;
++}
+\ No newline at end of file
+diff --git a/examples/CMakeLists.txt b/examples/CMakeLists.txt
+index 0b575f3..a9c0a54 100644
+--- a/examples/CMakeLists.txt
++++ b/examples/CMakeLists.txt
+@@ -16,6 +16,10 @@ if (BUDDY_LENET_EXAMPLES)
+   add_subdirectory(BuddyLeNet)
+ endif()
+ 
++if (BUDDY_TEST_EXAMPLES)
++  add_subdirectory(BuddyTest)
++endif()
++
+ if (BUDDY_MOBILENETV3_EXAMPLES)
+   add_subdirectory(BuddyMobileNetV3)
+ endif()
+diff --git a/frontend/Python/frontend.py b/frontend/Python/frontend.py
+index f30eb2a..dec0460 100644
+--- a/frontend/Python/frontend.py
++++ b/frontend/Python/frontend.py
+@@ -42,6 +42,7 @@ from .ops.linalg import ops_registry as linalg_ops_registry
+ from .ops.tosa import ops_registry as tosa_ops_registry
+ from .ops.math import ops_registry as math_ops_registry
+ from .ops.func import ops_registry as func_ops_registry
++from .ops.gpu import ops_registry as gpu_ops_registry
+ from .graph import Graph, TensorDType, TensorMeta
+ from .graph.operation import *
+ from .graph.transform import maxpool2d_simplify
+@@ -98,12 +99,14 @@ class DynamoCompiler:
+         self._verbose = verbose
+         self._imported_graphs = []
+         self._ops_registry = {}
++        self._ops_gpu_registry = {}
+         self._imported_params = {}
+         self._ops_registry.update(math_ops_registry)
+         self._ops_registry.update(linalg_ops_registry)
+         self._ops_registry.update(tosa_ops_registry)
+         self._ops_registry.update(func_ops_registry)
+         self._ops_registry.update(primary_registry)
++        self._ops_gpu_registry.update(gpu_ops_registry)
+         self._ops_map = {
+             "output": OutputOp,
+             "placeholder": PlaceholderOp,
+@@ -276,6 +279,7 @@ class DynamoCompiler:
+                 func_inputs,
+                 fake_params,
+                 self._ops_registry,
++                self._ops_gpu_registry,
+                 self._func_name,
+             )
+             for gm_node in _gm.graph.nodes:
+diff --git a/frontend/Python/graph/graph.py b/frontend/Python/graph/graph.py
+index 7c99b43..fb1dc7b 100644
+--- a/frontend/Python/graph/graph.py
++++ b/frontend/Python/graph/graph.py
+@@ -23,9 +23,12 @@ from types import FunctionType
+ import ctypes
+ import functools
+ import numpy as np
++import graphviz
++import json
+ 
+ import mlir.ir as ir
+ import mlir.dialects.func as func
++import mlir.dialects.bufferization as buffer
+ from mlir.passmanager import *
+ from mlir.execution_engine import *
+ from mlir import runtime as rt
+@@ -104,7 +107,9 @@ class Graph:
+         inputs: List[TensorMeta],
+         fake_params: List[TensorMeta],
+         ops_registry: dict,
++        ops_gpu_registry: dict,
+         func_name: str,
++        device: DeviceType = DeviceType.CPU
+     ) -> None:
+         """
+         Initializes the Graph.
+@@ -123,9 +128,10 @@ class Graph:
+         self._inputs = inputs
+         self.node_table: Dict[str, Op] = {}
+         self._fake_params = fake_params
+-        self.device = "cpu"
++        self.device = device
+         self._imported_module = None
+         self._ops_registry = ops_registry
++        self._ops_gpu_registry = ops_gpu_registry
+         self._func_name = func_name
+         self._ctx = ir.Context()
+         self._output_memref = None
+@@ -169,13 +175,26 @@ class Graph:
+         Returns:
+         - None
+         """
++        # for i, op in enumerate(self._body):
++        #     if isinstance(op, PlaceholderOp) or isinstance(op, OutputOp):
++        #         continue
++        #     group = [op]
++        #     subgraph_name = "subgraph{}".format(i)
++        #     self.group_map_device[subgraph_name] = DeviceType.GPU
++        #     self.op_groups[subgraph_name] = group
++        group = []
+         for i, op in enumerate(self._body):
+-            if isinstance(op, PlaceholderOp):
++            if isinstance(op, PlaceholderOp) or isinstance(op, OutputOp) or i==18 or i==21 or i==24:
+                 continue
+-            group = [op]
+-            subgraph_name = "subgraph{}".format(i)
+-            self.group_map_device[subgraph_name] = DeviceType.UNKNOW
+-            self.op_groups[subgraph_name] = group
++            group.append(op)
++        subgraph_name = "subgraph0"
++        self.group_map_device[subgraph_name] = DeviceType.GPU
++        self.op_groups[subgraph_name] = group
++        
++        new_group = [self._body[18], self._body[21], self._body[24]]
++        subgraph_name = "subgraph1"
++        self.group_map_device[subgraph_name] = DeviceType.CPU
++        self.op_groups[subgraph_name] = new_group
+ 
+     def fuse_ops(self, pattern_list: List[FunctionType]):
+         """
+@@ -195,9 +214,9 @@ class Graph:
+         # Initialize operation groups
+         self.init_op_group()
+ 
+-        # Apply fusion patterns
+-        for pattern_func in pattern_list:
+-            pattern_func(self)
++        # # Apply fusion patterns
++        # for pattern_func in pattern_list:
++        #     pattern_func(self)
+ 
+     def perform(self, func_list: List[FunctionType]):
+         """
+@@ -237,6 +256,9 @@ class Graph:
+                 self._inputs,
+                 self._func_name,
+                 self._ops_registry,
++                self._ops_gpu_registry,
++                False,
++                self.device
+             )
+             self._imported_module = fx_importer.import_graph()
+             outputs = fx_importer.get_output_nodes()
+@@ -244,7 +266,7 @@ class Graph:
+         output_ranks = []
+         output_dtypes = []
+         for out_node in outputs:
+-            out_type = ir.MemRefType(out_node.type)
++            out_type = ir.RankedTensorType(out_node.type)
+             shape = list(out_type.shape)
+             dtype = out_type.element_type
+             match str(dtype):
+@@ -324,6 +346,90 @@ class Graph:
+         self.lower_to_top_level_ir()
+         self.lower_to_llvm_ir()
+ 
++    def to_dot(self):
++        """
++        Converts a buddy graph to a DOT string for visualization.
++
++        Returns:
++            str: A DOT string representing the buddy graph for visualization.
++        """
++        dot = graphviz.Digraph(comment='Buddy Graph')
++        for op in self._body:
++            # if isinstance(op, PlaceholderOp):
++            #     continue
++            for child in op._children:
++                dot.edge(op._name, child)
++        for op in self._body:
++            if isinstance(op, PlaceholderOp):
++                dot.node(op._name, shape="ellipse", fillcolor="white", style="filled")
++                # continue
++            elif isinstance(op, OutputOp):
++                dot.node(op._name, shape="ellipse", fillcolor="white", style="filled")
++            elif isinstance(op, MaxPool2dOp):
++                dot.node(op._name, shape="box", fillcolor="red", style="filled")
++            else:
++                dot.node(op._name, shape="box", fillcolor="deepskyblue", style="filled")
++        return str(dot)
++
++    def to_json(self):
++        """
++        Converts a buddy graph to a JSON string.
++
++        Returns:
++            str: A JSON string representing the buddy graph.
++        """
++        json_str = json.dumps(self, cls=BuddyGraphEncoder)
++        return json_str
++    
++
++class BuddyGraphEncoder(json.JSONEncoder):
++    """
++    Custom JSON encoder for converting Buddy Graph objects to JSON strings.
++
++    This encoder handles encoding of Graph, Op, TensorMeta, OpType, TensorDType,
++    and DeviceType objects to their JSON representation.
++
++    Returns:
++        JSONEncoder: A JSON encoder instance for Buddy Graph objects.
++    """
++    def default(self, obj):
++        if isinstance(obj, Graph):
++            node_map_device = {}
++            for subgraph_name, ops in obj.op_groups.items():
++                for op in ops:
++                    node_map_device[op.name] = obj.group_map_device[subgraph_name]
++            return {
++                'graph_name' : obj._func_name,
++                'nodes' : obj._body,
++                'device' : obj.device,
++                'params' : obj._fake_params,
++                'inputs' : obj._inputs,
++                'node_map_device' : node_map_device
++            }
++        elif isinstance(obj, Op):
++            return {
++                'name' : obj._name,
++                'children' : obj._children,
++                'parents' : obj._parents,
++                'arguments' : obj._arguments,
++                'keyword_arguments' : obj._keyword_arguments,
++                'tensor_meta' : obj._tensor_meta,
++                'type' : obj._op_type,
++                'class' : obj.__class__.__name__
++            }
++        elif isinstance(obj, TensorMeta):
++            return {
++                'shape' : obj.shape,
++                'dtype' : obj.dtype
++            }
++        elif isinstance(obj, OpType):
++            return obj._name_
++        elif isinstance(obj, TensorDType):
++            return obj._name_
++        elif isinstance(obj, DeviceType):
++            return obj._value_
++        else:
++            return super().default(obj)
+ 
+ class GraphImporter:
+     """
+@@ -346,7 +452,9 @@ class GraphImporter:
+         inputs: List[TensorMeta],
+         func_name: str,
+         ops_registry: dict,
++        ops_gpu_registry: dict,
+         do_param_pack: bool = False,
++        device: DeviceType = DeviceType.CPU,
+     ):
+         """
+         Initializes the buddy Graph importer.
+@@ -361,7 +469,7 @@ class GraphImporter:
+             ops_registry = {}
+         self._symbol_table = {}
+         self._body = body
+-        self._device = DeviceType.GPU
++        self._device = device
+         self._func_name = func_name
+         self._params = params
+         self._inputs = inputs
+@@ -370,6 +478,7 @@ class GraphImporter:
+         self._num_input_visited = 0
+         self._module = ir.Module.create()
+         self._ops_registry = ops_registry
++        self._ops_gpu_registry = ops_gpu_registry
+         self._current_param_pack_offset = None
+ 
+     def _str_to_mlir_dtype(self, dtype: str) -> ir.Type:
+@@ -441,7 +550,7 @@ class GraphImporter:
+                 shape_list = list(arg.shape)
+                 dtype = arg.dtype
+                 mlir_dtype = self._str_to_mlir_dtype(dtype)
+-                tensor_arg = ir.MemRefType.get(shape_list, mlir_dtype)
++                tensor_arg = ir.RankedTensorType.get(shape_list, mlir_dtype)
+                 arguments.append(tensor_arg)
+             extern_func = []
+             for node in self._body:
+@@ -461,6 +570,11 @@ class GraphImporter:
+                             self._symbol_table.get((str(output_arg), 0))
+                             for output_arg in output_node_args
+                         ]
++                        if self._device == DeviceType.GPU:
++                            returns = [
++                                buffer.to_tensor(ret)
++                                for ret in returns
++                            ]
+                         self._symbol_table[("output", 0)] = returns
+                     elif isinstance(node, PlaceholderOp):
+                         self._import_placeholder(node, args_list)
+@@ -577,6 +691,16 @@ class GraphImporter:
+         else:
+             placeholder_name = args_list[self._num_input_visited]
+ 
++        # TODO : Consider converting arg type from RankedTensorType to MemRefType
++        if self._device == DeviceType.GPU:
++            placeholder_name = buffer.to_memref(
++                ir.MemRefType.get(
++                    list(node.tensor_meta['shape']), 
++                    self._str_to_mlir_dtype(node.tensor_meta['dtype'])
++                ),
++                placeholder_name
++            )
++
+         self._symbol_table[(str(node.name), 0)] = placeholder_name
+         self._num_input_visited += 1
+ 
+@@ -590,9 +714,14 @@ class GraphImporter:
+         """
+         
+         op_name = node.__class__.__name__
+-        op_ret: ir.Operation | ir.Value | tuple | List | ir.OpResult = (
+-            self._ops_registry[op_name](node, self._symbol_table)
+-        )
++        if self._device == DeviceType.CPU:
++            op_ret: ir.Operation | ir.Value | tuple | List | ir.OpResult = (
++                self._ops_registry[op_name](node, self._symbol_table)
++            )
++        else:
++            op_ret: ir.Operation | ir.Value | tuple | List | ir.OpResult = (
++                self._ops_gpu_registry[op_name](node, self._symbol_table)
++            )
+         if isinstance(op_ret, tuple | List):
+             for i, operation in enumerate(op_ret):
+                 if isinstance(operation, ir.Operation) or isinstance(
+diff --git a/frontend/Python/graph/graph_driver.py b/frontend/Python/graph/graph_driver.py
+index 50a8869..8ff8966 100644
+--- a/frontend/Python/graph/graph_driver.py
++++ b/frontend/Python/graph/graph_driver.py
+@@ -21,6 +21,7 @@
+ # ===---------------------------------------------------------------------------
+ 
+ from mlir import ir
++from collections import deque, defaultdict
+ 
+ from .graph import Graph, GraphImporter, TensorMeta
+ from .operation import FuncOp, CallOp, PlaceholderOp, OutputOp, GetItemOp
+@@ -52,6 +53,11 @@ class GraphDriver:
+         - None
+         """
+         self._graph = graph
++        self._subgraph_dependencies = { 
++            subgraph_name : set() 
++            for subgraph_name in list(self._graph.op_groups.keys()) 
++        }
++        self._call_table = {}
+         (
+             self._subgraphs,
+             self._subgraphs_inputs,
+@@ -95,13 +101,14 @@ class GraphDriver:
+                 for arg in node.args:
+                     output_node.append(arg)
+         
+-        # Identify outputs for each subgraph
++        # Identify outputs for each subgraph and build dependencies between subgraphs
+         for subgraph_name in self._graph.op_groups.keys():
+             subgraphs_outputs[subgraph_name] = []
+             for op in self._graph.op_groups[subgraph_name]:
+                 for key in subgraphs_inputs.keys():
+                     if op.name in subgraphs_inputs[key]:
+                         subgraphs_outputs[subgraph_name].append(op.name)
++                        self._subgraph_dependencies[subgraph_name].add(key)
+                 if (op.name in output_node) and (
+                     op.name not in subgraphs_outputs[subgraph_name]
+                 ):
+@@ -112,6 +119,7 @@ class GraphDriver:
+         for subgraph_name in self._graph.op_groups.keys():
+             subgraph_input = []
+             subgraph_body = []
++            subgraph_device = self._graph.group_map_device[subgraph_name]
+ 
+             # Construct input placeholder nodes
+             for inp in subgraphs_inputs[subgraph_name]:
+@@ -142,7 +150,12 @@ class GraphDriver:
+ 
+             # Create subgraph and add it to the dictionary
+             subgraph = Graph(
+-                subgraph_input, [], self._graph._ops_registry, subgraph_name
++                subgraph_input,
++                [], 
++                self._graph._ops_registry, 
++                self._graph._ops_gpu_registry,
++                subgraph_name,
++                subgraph_device
+             )
+             subgraph.body = subgraph_body
+             for op in subgraph_body:
+@@ -151,6 +164,38 @@ class GraphDriver:
+ 
+         return subgraphs, subgraphs_inputs, subgraphs_outputs
+ 
++    def topological_sort_subgraph(self):
++        """
++        Performs topological sorting on the subgraphs based on their dependencies.
++
++        Args:
++        - graph (Graph): The graph from which subgraphs are constructed.
++
++        Returns:
++        - list: A list of subgraph names in topological order if the graph is acyclic; otherwise, None.
++        """
++
++        # Calculate in degree of each subgraph
++        in_degree = { subgraph_name : 0 for subgraph_name in list(self._subgraphs.keys()) }
++        for src, dests in self._subgraph_dependencies.items():
++            for dest in dests:
++                in_degree[dest] += 1
++
++        # Topological sorting 
++        queue = deque([node for node in in_degree if in_degree[node] == 0])
++        topo_order = []
++
++        while queue:
++            node = queue.popleft()
++            topo_order.append(node)
++            for child in self._subgraph_dependencies[node]:
++                in_degree[child] -= 1
++                if in_degree[child] == 0:
++                    queue.append(child)
++
++        # TODO: If the custom subgraph partitioning is illegal, further partition the subgraph to make it valid.
++        return topo_order if len(topo_order) == len(list(self._subgraphs.keys())) else None
++
+     def construct_main_graph(self, do_param_pack=False):
+         """
+         Constructs the main computational graph by incorporating subgraphs' call
+@@ -171,6 +216,7 @@ class GraphDriver:
+             self._graph._inputs,
+             self._graph._fake_params,
+             self._graph._ops_registry,
++            self._graph._ops_gpu_registry,
+             self._graph._func_name,
+         )
+ 
+@@ -188,53 +234,69 @@ class GraphDriver:
+                 func_node.tensor_meta["dtype"].append(
+                     self._graph.node_table[output].tensor_meta["dtype"]
+                 )
+-            main_graph.body.append(func_node)
++            main_graph.add_node(func_node)
+         
+         # Adding placeholder operations from the original graph
+         for op in self._graph.body:
+             if isinstance(op, PlaceholderOp):
+-                main_graph.body.append(op)
++                main_graph.add_node(op)
++            
++        # Analysis topology order to sort subgraph call.
++        topo_order = self.topological_sort_subgraph()
++        if topo_order ==  None:
++            print('Error : Graph Partitioning is illegal!')
++            return None
+         
+-        # TODO: analysis topology order to sort subgraph call.
+-        if len(self._subgraphs) == 1:
+-            # Adding CallOp to invoke the single subgraph
++        # Adding CallOp to invoke the single subgraph
++        for i, subgraph_name in enumerate(topo_order):
+             call_node = CallOp()
+-            call_node.name = "call0"
+-            call_node.call_func_name = list(self._subgraphs.keys())[0]
++            call_node.name = "call{}".format(i)
++            call_node.call_func_name = subgraph_name
+             call_node.tensor_meta = {"shape": [], "dtype": []}
+-            for inp in list(self._subgraphs_inputs.values())[0]:
+-                call_node.add_argument(inp)
+-            for output in list(self._subgraphs_outputs.values())[0]:
++            for inp in self._subgraphs_inputs[subgraph_name]:
++                if inp in main_graph.node_table:
++                    call_node.add_argument(inp)
++                    continue
++                for key, value in self._subgraphs_outputs.items():
++                    if inp in value:
++                        call_node.add_argument(
++                            arg=self._call_table[key].name,
++                            arg_index=value.index(inp)
++                        )
++                        break
++            for output in self._subgraphs_outputs[subgraph_name]:
+                 call_node.tensor_meta["shape"].append(
+                     self._graph.node_table[output].tensor_meta["shape"]
+                 )
+                 call_node.tensor_meta["dtype"].append(
+                     self._graph.node_table[output].tensor_meta["dtype"]
+                 )
+-            main_graph.body.append(call_node)
++            self._call_table[subgraph_name] = call_node
++            main_graph.add_node(call_node)
+ 
+-            # Adding GetItemOps to retrieve individual output tensors
+-            output_node = OutputOp()
+-            for i, output in enumerate(list(self._subgraphs_outputs.values())[0]):
+-                getitem_node = GetItemOp()
+-                getitem_node.add_argument(call_node.name)
+-                getitem_node.add_argument(i)
+-                getitem_node.name = "getitem{}".format(i)
+-                output_node.add_argument(getitem_node.name)
+-                main_graph.body.append(getitem_node)
+-            
+-            # Marking the final output of the main graph
+-            output_node.name = "output"
+-            main_graph.body.append(output_node)
+-
+-            # Importing the main graph
+-            with ir.Location.unknown(ir.Context()):
+-                main_importer = GraphImporter(
+-                    main_graph.body,
+-                    main_graph._fake_params,
+-                    main_graph._inputs,
+-                    main_graph._func_name,
+-                    main_graph._ops_registry,
+-                    do_param_pack,
+-                )
+-                return main_importer.import_main_graph()
++        # Adding GetItemOps to retrieve individual output tensors
++        output_node = OutputOp()
++        for i, output in enumerate(self._subgraphs_outputs[topo_order[-1]]):
++            getitem_node = GetItemOp()
++            getitem_node.add_argument(call_node.name)
++            getitem_node.add_argument(i)
++            getitem_node.name = "getitem{}".format(i)
++            output_node.add_argument(getitem_node.name)
++            main_graph.add_node(getitem_node)
++        
++        # Marking the final output of the main graph
++        output_node.name = "output"
++        main_graph.add_node(output_node)
++
++        # Importing the main graph
++        with ir.Location.unknown(ir.Context()):
++            main_importer = GraphImporter(
++                main_graph.body,
++                main_graph._fake_params,
++                main_graph._inputs,
++                main_graph._func_name,
++                main_graph._ops_registry,
++                main_graph._ops_gpu_registry,
++                do_param_pack,
++            )
++            return main_importer.import_main_graph()
+diff --git a/frontend/Python/graph/json_decoder.py b/frontend/Python/graph/json_decoder.py
+new file mode 100644
+index 0000000..d8bac5c
+--- /dev/null
++++ b/frontend/Python/graph/json_decoder.py
+@@ -0,0 +1,104 @@
++import json
++from pathlib import Path
++
++from .graph import Graph, TensorDType, TensorMeta
++from .graph_driver import GraphDriver
++from .operation import *
++from .type import *
++
++from ..ops.linalg import ops_registry as linalg_ops_registry
++from ..ops.tosa import ops_registry as tosa_ops_registry
++from ..ops.math import ops_registry as math_ops_registry
++from ..ops.func import ops_registry as func_ops_registry
++from ..ops.gpu import ops_registry as gpu_ops_registry
++
++def json_to_graph(json_str):
++    """
++    Converts a buddy graph JSON string to a Graph object.
++
++    Args:
++        json_str (str): The JSON string representing the buddy graph.
++
++    Returns:
++        Graph: The Graph object created from the JSON data.
++    """
++    def json_to_tensormeta(json_data):
++        """
++        Convert JSON data to a TensorMeta object.
++
++        Args:
++            json_data (dict): JSON data representing a TensorMeta object.
++
++        Returns:
++            TensorMeta: The TensorMeta object created from the JSON data.
++        """
++        if 'shape' in json_data:
++            shape = json_data['shape']
++            dtype = next(
++                (member for member in TensorDType.__members__.values() 
++                 if member.value.upper() == json_data['dtype'].upper()), None
++            )
++            return TensorMeta(shape, dtype)
++        return {}
++        
++    json_data = json.loads(json_str)
++    _graph = json_data
++    graph_name = _graph['graph_name'] 
++    inputs = []
++    params = []
++    for _input in _graph['inputs']:
++        inputs.append(json_to_tensormeta(_input))
++    for _param in _graph['params']:
++        params.append(json_to_tensormeta(_param))
++    ops_registry = {}
++    ops_registry.update(func_ops_registry)
++    ops_registry.update(linalg_ops_registry)
++    ops_registry.update(tosa_ops_registry)
++    ops_registry.update(math_ops_registry)
++    graph = Graph(
++        inputs, 
++        params,
++        ops_registry, 
++        gpu_ops_registry,
++        graph_name
++    )
++    graph.device = _graph['device']
++    for _node in _graph['nodes']:
++        op_class = _node['class']
++        op = globals()[op_class]()
++
++        op._name = _node['name']
++        op._children = _node['children']
++        op._parents = _node['parents']
++        op._arguments = _node['arguments']
++        op._keyword_arguments = _node['keyword_arguments']
++        op._type = next(
++            (member for member in OpType.__members__.values() if member.value == _node['type']), None
++        )
++
++        # TODO : node attr tensor_meta should be  Class TensorMeta
++        if ('shape' not in _node['tensor_meta']):
++            op._tensor_meta = _node['tensor_meta']
++        else:
++            op._tensor_meta = {
++                'shape' : _node['tensor_meta']['shape'],
++                'dtype' : next(
++                    (member for member in TensorDType.__members__.values() 
++                    if member.value.upper() == _node['tensor_meta']['dtype'].upper()), None
++                )
++            }
++        graph.add_node(op)
++
++    for i, device in enumerate(list(set(_graph['node_map_device'].values()))):
++        subgraph_name = "subgraph{}".format(i)
++        graph.op_groups[subgraph_name] = []
++        graph.group_map_device[subgraph_name] = DeviceType(device)
++
++    for node, op_device in _graph['node_map_device'].items():
++        op = graph.node_table[node]
++        for subgraph_name, group_device in graph.group_map_device.items():
++            if op_device == group_device.value:
++                graph.op_groups[subgraph_name].append(op)
++                break
++
++    return graph
+diff --git a/frontend/Python/graph/operation.py b/frontend/Python/graph/operation.py
+index 14bfbf2..fd3671f 100644
+--- a/frontend/Python/graph/operation.py
++++ b/frontend/Python/graph/operation.py
+@@ -81,13 +81,14 @@ class Op:
+         """
+         self._name = None
+         self._arguments = []
++        self._args_index = []
+         self._keyword_arguments = {}
+         self._tensor_meta: Dict = {}
+         self._op_type: OpType = None
+         self._children: List[str] = []
+         self._parents: List[str] = []
+ 
+-    def add_argument(self, arg):
++    def add_argument(self, arg, arg_index=0):
+         """
+         Add an input argument to the operation node.
+ 
+@@ -96,6 +97,7 @@ class Op:
+             The input argument to be added.
+         """
+         self._arguments.append(arg)
++        self._args_index.append(arg_index)
+ 
+     def add_parent(self, parent: str):
+         """
+@@ -124,10 +126,19 @@ class Op:
+     @property
+     def kwargs(self):
+         return self._keyword_arguments
++    
++    @property
++    def parents(self):
++        return self._parents
++
++    @property
++    def children(self):
++        return self._children
+ 
+     @property
+     def name(self):
+         return self._name
++    
+     @name.setter
+     def name(self, new_name):
+         self._name = new_name
+diff --git a/frontend/Python/graph/transform/fuse_ops.py b/frontend/Python/graph/transform/fuse_ops.py
+index 61f6a5b..b319265 100644
+--- a/frontend/Python/graph/transform/fuse_ops.py
++++ b/frontend/Python/graph/transform/fuse_ops.py
+@@ -39,7 +39,7 @@ def simply_fuse(graph: Graph):
+     - None: Modifies the input graph in place.
+     """
+     new_op_group = []
+-    device = DeviceType.UNKNOW
++    device = DeviceType.GPU
+     for op in graph.body:
+         if isinstance(op, PlaceholderOp):
+             continue
+diff --git a/frontend/Python/graph/transform/useless_op_eliminate.py b/frontend/Python/graph/transform/useless_op_eliminate.py
+index a99dbe0..2522e17 100644
+--- a/frontend/Python/graph/transform/useless_op_eliminate.py
++++ b/frontend/Python/graph/transform/useless_op_eliminate.py
+@@ -42,13 +42,24 @@ def maxpool2d_simplify(graph: Graph):
+                 and getitem_node.args[1] == 0
+             ):
+                 new_node = MaxPool2dOp()
+-                new_node.name = getitem_node.name
++                new_node.name = node.name.replace("_with_indices", "")
+                 for arg in node.args:
+                     new_node.add_argument(arg)
+                 for parent in node._parents:
+                     new_node.add_parent(parent)
++                    parent_node = graph.node_table[parent]
++                    for cindex, child in enumerate(parent_node.children):
++                        if child == node.name:
++                            parent_node.children[cindex] = new_node.name
+                 for child in getitem_node._children:
+                     new_node.add_children(child)
++                    child_node = graph.node_table[child]
++                    for pindex, parent in enumerate(child_node.parents):
++                        if parent == getitem_node.name:
++                            child_node.parents[pindex] = new_node.name
++                    for aindex, arg in enumerate(child_node.args):
++                        if arg == getitem_node.name:
++                            child_node.args[aindex] = new_node.name
+                 new_node.tensor_meta["shape"] = getitem_node.tensor_meta[
+                     "shape"
+                 ]
+@@ -63,4 +74,4 @@ def maxpool2d_simplify(graph: Graph):
+                 for j, op in enumerate(graph.body):
+                     if op == getitem_node:
+                         graph.body[j] = new_node
+-                        break
++                        break
+\ No newline at end of file
+diff --git a/frontend/Python/ops/func.py b/frontend/Python/ops/func.py
+index a7dcc5e..e885809 100644
+--- a/frontend/Python/ops/func.py
++++ b/frontend/Python/ops/func.py
+@@ -59,8 +59,8 @@ def call_op(node: CallOp, symbol_table: Dict[Tuple[str, int], ir.Operation]):
+     From Buddy CallOp to MLIR FUNC call operation.
+     """
+     arguments = []
+-    for arg in node.args:
+-        input_node = symbol_table.get((str(arg), 0))
++    for i, arg in enumerate(node.args):
++        input_node = symbol_table.get((str(arg), node._args_index[i]))
+         memref_type = ir.MemRefType(input_node.type)
+         stride = []
+         shape = memref_type.shape
+diff --git a/frontend/Python/ops/gpu.py b/frontend/Python/ops/gpu.py
+index 2eff78f..9c8a526 100644
+--- a/frontend/Python/ops/gpu.py
++++ b/frontend/Python/ops/gpu.py
+@@ -21,16 +21,21 @@
+ 
+ from typing import Tuple
+ import mlir.ir as ir
+-from mlir.dialects import gpu, memref, arith, scf
++from mlir.dialects import gpu, memref, arith, scf, vector
+ 
+ from ..graph import TensorDType
+ from ..graph import (
+     ReluOp,
+     ReshapeOp,
+-    PermuteOp
++    PermuteOp,
++    Conv2dOp,
++    MaxPool2dOp,
++    AddMMOp
+ )
+ from .utils import *
+ 
++TILE_WIDTH = 16
++
+ def relu_op(node: ReluOp, symbol_table: Dict[Tuple[str, int], ir.Operation]):
+     """
+     Import the buddy ReluOp.
+@@ -62,24 +67,37 @@ def relu_op(node: ReluOp, symbol_table: Dict[Tuple[str, int], ir.Operation]):
+     gpu_kernel = gpu.LaunchOp(
+         asyncToken=None,
+         asyncDependencies=[],
+-        gridSizeX=c1.result, gridSizeY=c1.result, gridSizeZ=c1.result,
+-        blockSizeX=kernels.result, blockSizeY=c1.result, blockSizeZ=c1.result,
++        gridSizeX=c1.result, 
++        gridSizeY=c1.result, 
++        gridSizeZ=c1.result,
++        blockSizeX=kernels.result, 
++        blockSizeY=c1.result, 
++        blockSizeZ=c1.result,
+     )
+     gpu_kernel_block = ir.Block.create_at_start(
+         gpu_kernel.body,
+         [
+-            ir.IndexType.get(), ir.IndexType.get(), ir.IndexType.get(),     # block_idx, block_idy, block_idz 
+-            ir.IndexType.get(), ir.IndexType.get(), ir.IndexType.get(),     # thread_idx , thread_idy, thread_idz 
+-            ir.IndexType.get(), ir.IndexType.get(), ir.IndexType.get(),     # grid_size x, grid_size y, grid_size z 
+-            ir.IndexType.get(), ir.IndexType.get(), ir.IndexType.get(),     # block_size x, block_size y, block_size z
++            ir.IndexType.get(),     # block_id x
++            ir.IndexType.get(),     # block_id y 
++            ir.IndexType.get(),     # block_id z 
++            ir.IndexType.get(),     # thread_id x
++            ir.IndexType.get(),     # thread_id y  
++            ir.IndexType.get(),     # thread_id z
++            ir.IndexType.get(),     # grid_size x
++            ir.IndexType.get(),     # grid_size y
++            ir.IndexType.get(),     # grid_size z
++            ir.IndexType.get(),     # block_size x
++            ir.IndexType.get(),     # block_size y
++            ir.IndexType.get(),     # block_size z
+         ]
+     )
+ 
+     with ir.InsertionPoint(gpu_kernel_block):
+-        tIdX = gpu_kernel_block.arguments[3]
+-        cst_0 = arith.ConstantOp(ir.F32Type.get(), ir.FloatAttr.get(ir.F32Type.get(), 0.0))
++        thread_local_idx = gpu_kernel_block.arguments[3]
++        element_attr = mlir_element_attr_get(dtype, 0.0)
++        cst_0 = arith.ConstantOp(element_type, element_attr)
+         loop = scf.ForOp(
+-            lower_bound=tIdX,
++            lower_bound=thread_local_idx,
+             upper_bound=size,
+             step=gpu_kernel.blockSizeX
+         )
+@@ -90,12 +108,14 @@ def relu_op(node: ReluOp, symbol_table: Dict[Tuple[str, int], ir.Operation]):
+             scf.YieldOp([])
+         
+         gpu.TerminatorOp()
++
++    gpu.HostUnregisterOp(input_cast)
+     output = memref.AllocOp(ir.MemRefType.get(output_shape, element_type), [], [])
+     memref.CopyOp(input, output)
+     return output
+ 
+-# TODO: Implement Reshape Operation on GPU in future revisions.
+ 
++# TODO: Implement Reshape Operation on GPU in future revisions.
+ def reshape_op(node: ReshapeOp, symbol_table):
+     """
+     Import the reshape operation.
+@@ -141,8 +161,8 @@ def reshape_op(node: ReshapeOp, symbol_table):
+ 
+     return op
+ 
+-# TODO: Implement Permute Operation on GPU in future revisions.
+ 
++# TODO: Implement Permute Operation on GPU in future revisions.
+ def permute_op(node: PermuteOp, symbol_table):
+     """
+     Import the permute operation.
+@@ -150,32 +170,560 @@ def permute_op(node: PermuteOp, symbol_table):
+     operation.
+     """
+     input1 = symbol_table.get((str(node.args[0]), 0))
+-    perm = node.args[1]
+-    perm_attr = ir.AffineMapAttr.get(ir.AffineMap.get_permutation(perm))
++    perm_map = node.args[1]
++    perm_map_attr = ir.AffineMapAttr.get(ir.AffineMap.get_permutation(perm_map))
++
++    output_shape = list(node.tensor_meta["shape"])
++    dtype = node.tensor_meta["dtype"]
++    
++    element_type = mlir_element_type_get(dtype)
++    element_attr = mlir_element_attr_get(dtype, 0.0)
++    
++    c0 = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), 0))
++    f0 = arith.ConstantOp(element_type, element_attr)
++
++    v0 = vector.transfer_read(
++        vector=ir.VectorType.get(output_shape, element_type),
++        source=input1,
++        indices=[c0]*len(output_shape),
++        permutation_map=perm_map_attr,
++        padding=f0
++    )
++    
++    transpose = memref.AllocOp(ir.MemRefType.get(output_shape, element_type), [], [])
++
++    vector.transfer_write(
++        result=None,
++        vector=v0,
++        source=transpose,
++        indices=[c0]*len(output_shape),
++        permutation_map=ir.AffineMapAttr.get(
++            ir.AffineMap.get_permutation([i for i in range(len(output_shape))])
++        )
++    )
++    return transpose
++
++
++# TODO: Consider the cases where the arguments take different values.
++def convolution2d_op(node: Conv2dOp, symbol_table):
++    """
++    Import the convolution operation.
++    From Buddy Conv2dOp to MLIR GPU `conv2d` kernel.
++    arg[0]: Tensor input
++    arg[1]: Tensor weight
++    arg[2]: Tensor? bias
++    arg[3]: SymInt[] stride
++    arg[4]: SymInt[] padding
++    arg[5]: SymInt[] dilation
++    arg[6]: bool transposed
++    arg[7]: SymInt[] output_padding
++    arg[8]: SymInt groups
++    """
++    # Get arguments from convolution node.
++    assert len(node.args) == 9
++    input = node.args[0]
++    filter = node.args[1]
++    bias = node.args[2]
++    stride = node.args[3]
++    input_padding = node.args[4]
++    dilation = node.args[5]
++    is_kernel_transposed = node.args[6]
++    out_padding = node.args[7]
++    groups = node.args[8]
++
++    # TODO: Consider the cases where the variables take different values.
++    assert input_padding[0] == input_padding[1] == 0
++    assert dilation[0] == dilation[1] == 1
++    assert is_kernel_transposed == False
++    assert out_padding[0] == out_padding[1] == 0
++    assert groups == 1
++
++    # Prepare input, filter, and output information.
++    input_val = symbol_table.get((str(input), 0))
++    input_shape = list(ir.MemRefType(input_val.type).shape)
++    filter_val = symbol_table.get((str(filter), 0))
++    filter_shape = ir.MemRefType(filter_val.type).shape
++    bias_val = symbol_table.get((str(bias), 0))
++    dtype = node.tensor_meta["dtype"]
++    element_type = mlir_element_type_get(dtype)
++    output_shape = list(node.tensor_meta["shape"])
++
++    batch_size = input_shape[0]
++    in_channels = input_shape[1]
++    out_channels = output_shape[1]
++    in_size_h = input_shape[2]
++    in_size_w = input_shape[3]
++    out_size_h = output_shape[2]
++    out_size_w = output_shape[3]
++    H_filter = filter_shape[2]
++    W_filter = filter_shape[3]
++
++    output_val = memref.AllocOp(ir.MemRefType.get(output_shape, element_type), [], [])
++    unranked_memref_type = ir.UnrankedMemRefType.get(element_type, ir.IntegerAttr.get(ir.IndexType.get(), 0))
++    input_cast = memref.CastOp(unranked_memref_type, input_val)
++    filter_cast = memref.CastOp(unranked_memref_type, filter_val)
++    bias_cast = memref.CastOp(unranked_memref_type, bias_val)
++    output_cast = memref.CastOp(unranked_memref_type, output_val)
++
++    gpu.HostRegisterOp(input_cast)
++    gpu.HostRegisterOp(filter_cast)
++    gpu.HostRegisterOp(bias_cast)
++    gpu.HostRegisterOp(output_cast)
++
++    # Tile the input_val into Grids
++    block_z = ((out_size_h + TILE_WIDTH - 1) // TILE_WIDTH) * ((out_size_w + TILE_WIDTH - 1) // TILE_WIDTH)
++    batch_size_val = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), batch_size))
++    in_channels_val = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), in_channels))
++    out_channels_val = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), out_channels))
++    block_z_val = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), block_z))
++    tile_width_val = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), TILE_WIDTH))
++    H_filter_val = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), H_filter))
++    W_filter_val = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), W_filter))
++    c0 = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), 0))
++    c1 = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), 1))
++    
++    # threadsPerBlock(TILE_WIDTH, TILE_WIDTH, 1)        numBlocks(N, K, block_z)
++    
++    gpu_kernel = gpu.LaunchOp(
++        asyncToken=None,
++        asyncDependencies=[],
++        gridSizeX=batch_size_val.result,
++        gridSizeY=out_channels_val.result,
++        gridSizeZ=block_z_val.result,
++        blockSizeX=tile_width_val.result,
++        blockSizeY=tile_width_val.result,
++        blockSizeZ=c1.result,
++    )
++
++    gpu_kernel_block = ir.Block.create_at_start(
++        gpu_kernel.body,
++        [
++            ir.IndexType.get(),     # block_id x
++            ir.IndexType.get(),     # block_id y 
++            ir.IndexType.get(),     # block_id z 
++            ir.IndexType.get(),     # thread_id x
++            ir.IndexType.get(),     # thread_id y  
++            ir.IndexType.get(),     # thread_id z
++            ir.IndexType.get(),     # grid_size x
++            ir.IndexType.get(),     # grid_size y
++            ir.IndexType.get(),     # grid_size z
++            ir.IndexType.get(),     # block_size x
++            ir.IndexType.get(),     # block_size y
++            ir.IndexType.get(),     # block_size z
++        ]
++    )
++
++    with ir.InsertionPoint(gpu_kernel_block):
++        batch_id = gpu_kernel_block.arguments[0]    
++        out_channel_id = gpu_kernel_block.arguments[1]    
++        tile_id = gpu_kernel_block.arguments[2] 
++        thread_local_idx = gpu_kernel_block.arguments[3]  
++        thread_local_idy = gpu_kernel_block.arguments[4]
++
++        # Calculate the convolution element at (h, w) for this thread
++        tile_num = (out_size_w + TILE_WIDTH - 1) // TILE_WIDTH
++        tile_num_val = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), tile_num))
++        
++        t0 = arith.divui(tile_id, tile_num_val)
++        t1 = arith.muli(t0, tile_width_val)
++        thread_global_idx = arith.addi(t1, thread_local_idx)
++
++        t2 = arith.remui(tile_id, tile_num_val)
++        t3 = arith.muli(t2, tile_width_val)
++        thread_global_idy = arith.addi(t3, thread_local_idy)
++
++        stride_h = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), stride[0]))
++        stride_w = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), stride[1]))
++        t4 = arith.muli(thread_global_idx, stride_h)
++        t5 = arith.muli(thread_global_idy, stride_w)
++
++        # Check if the (h, w) is out of the output bounds
++        ult = 6
++        out_size_h_val = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), out_size_h))
++        out_size_w_val = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), out_size_w))
++        isHInBounds = arith.cmpi(ult, thread_global_idx, out_size_h_val)
++        isWInBounds = arith.cmpi(ult, thread_global_idy, out_size_w_val)
++        isInBounds = arith.andi(isHInBounds, isWInBounds)
++        
++        cst_0 = arith.ConstantOp(element_type, mlir_element_attr_get(dtype, 0.0))
++        branch0 = scf.IfOp(isInBounds)
++        with ir.InsertionPoint(branch0.then_block):
++            loop0 = scf.ForOp(
++                lower_bound=c0.result,
++                upper_bound=in_channels_val.result,
++                step=c1.result,
++                iter_args=[cst_0.result]
++            )
++            with ir.InsertionPoint(loop0.body):
++                loop1 = scf.ForOp(
++                    lower_bound=c0.result,
++                    upper_bound=H_filter_val.result,
++                    step=c1.result,
++                    iter_args=[cst_0.result]
++                )
++                with ir.InsertionPoint(loop1.body):
++                    loop2 = scf.ForOp(
++                        lower_bound=c0.result,
++                        upper_bound=W_filter_val.result,
++                        step=c1.result,
++                        iter_args=[cst_0.result]
++                    )
++                    with ir.InsertionPoint(loop2.body):
++                        # TODO : loop body
++                        in_channel_id = loop0.body.arguments[0]
++                        filter_ele_idx = loop1.body.arguments[0]
++                        filter_ele_idy = loop2.body.arguments[0]
++                        input_ele_idx = arith.addi(t4, filter_ele_idx)
++                        input_ele_idy = arith.addi(t5, filter_ele_idy)
++                        input_ele = memref.LoadOp(input_val, [batch_id, in_channel_id, input_ele_idx, input_ele_idy])
++                        filter_ele = memref.LoadOp(filter_val, [out_channel_id, in_channel_id, filter_ele_idx, filter_ele_idy])
++                        t6 = arith.mulf(input_ele, filter_ele)
++                        iter_arg2 = loop2.body.arguments[1]
++                        iter_res2 = arith.addf(iter_arg2, t6)
++                        scf.YieldOp([iter_res2])
++
++                    iter_arg1 = loop1.body.arguments[1]
++                    iter_res1 = arith.addf(loop2, iter_arg1)
++                    scf.YieldOp([iter_res1])
++
++                iter_arg0 = loop0.body.arguments[1]
++                iter_res0 = arith.addf(loop1, iter_arg0)
++                scf.YieldOp([iter_res0])
++
++            # Add bias data for any out_channel.
++            bias_ele = memref.LoadOp(bias_val, [out_channel_id])
++            result = arith.addf(loop0, bias_ele)
++            memref.StoreOp(result, output_val, [batch_id, out_channel_id, thread_global_idx, thread_global_idy])
++            scf.YieldOp([])
++                
++        gpu.TerminatorOp()
++    
++    gpu.HostUnregisterOp(input_cast)
++    gpu.HostUnregisterOp(filter_cast)
++    gpu.HostUnregisterOp(bias_cast)
++    gpu.HostUnregisterOp(output_cast)
++
++    return output_val
++
++
++# TODO: Consider the cases where the maxpool2d operation needs padding.
++def maxpool2d_op(node: MaxPool2dOp, symbol_table):
++    """
++    Import the maxpool2d operation.
++    From Buddy MaxPool2dOp to MLIR GPU `max_pool2d` kernel.
++    """
++    if len(node.args) == 5:
++        raise NotImplementedError
++    input1 = node.args[0]
++    kernel = node.args[1]
++    stride = node.args[2]
++
++    # Prepare padding data
++    if len(node.args) > 3:
++        pad = node.args[3]
++    else:
++        pad = [0 for _ in kernel]
++
++    dtype = node.tensor_meta["dtype"]
++    element_type = mlir_element_type_get(dtype)
++    output_shape = node.tensor_meta["shape"]
++
++    batch_size = output_shape[0]
++    in_channels = output_shape[1]
++    out_size_h = output_shape[2]
++    out_size_w = output_shape[3]
++
++    input_val = symbol_table.get((str(input1), 0))
++    output_val = memref.AllocOp(ir.MemRefType.get(output_shape, element_type), [], [])
++    unranked_memref_type = ir.UnrankedMemRefType.get(element_type, ir.IntegerAttr.get(ir.IndexType.get(), 0))
++    input_cast = memref.CastOp(unranked_memref_type, input_val)
++    output_cast = memref.CastOp(unranked_memref_type, output_val)
++
++    gpu.HostRegisterOp(input_cast)
++    gpu.HostRegisterOp(output_cast)
++
++    # Tile the input_val into Grids
++    block_z = ((out_size_h + TILE_WIDTH - 1) // TILE_WIDTH) * ((out_size_w + TILE_WIDTH - 1) // TILE_WIDTH)
++    batch_size_val = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), batch_size))
++    in_channels_val = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), in_channels))
++    block_z_val = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), block_z))
++    tile_width_val = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), TILE_WIDTH))
++    c0 = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), 0))
++    c1 = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), 1))
++    
++    # threadsPerBlock(TILE_WIDTH, TILE_WIDTH, 1)        numBlocks(N, K, block_z)
++    
++    gpu_kernel = gpu.LaunchOp(
++        asyncToken=None,
++        asyncDependencies=[],
++        gridSizeX=batch_size_val.result,
++        gridSizeY=in_channels_val.result,
++        gridSizeZ=block_z_val.result,
++        blockSizeX=tile_width_val.result,
++        blockSizeY=tile_width_val.result,
++        blockSizeZ=c1.result,
++    )
++
++    gpu_kernel_block = ir.Block.create_at_start(
++        gpu_kernel.body,
++        [
++            ir.IndexType.get(),     # block_id x
++            ir.IndexType.get(),     # block_id y 
++            ir.IndexType.get(),     # block_id z 
++            ir.IndexType.get(),     # thread_id x
++            ir.IndexType.get(),     # thread_id y  
++            ir.IndexType.get(),     # thread_id z
++            ir.IndexType.get(),     # grid_size x
++            ir.IndexType.get(),     # grid_size y
++            ir.IndexType.get(),     # grid_size z
++            ir.IndexType.get(),     # block_size x
++            ir.IndexType.get(),     # block_size y
++            ir.IndexType.get(),     # block_size z
++        ]
++    )
++
++    with ir.InsertionPoint(gpu_kernel_block):
++        batch_id = gpu_kernel_block.arguments[0]    
++        in_channel_id = gpu_kernel_block.arguments[1]    
++        tile_id = gpu_kernel_block.arguments[2] 
++        thread_local_idx = gpu_kernel_block.arguments[3]  
++        thread_local_idy = gpu_kernel_block.arguments[4]
++
++        # Calculate the convolution element at (h, w) for this thread
++        tile_num = (out_size_w + TILE_WIDTH - 1) // TILE_WIDTH
++        tile_num_val = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), tile_num))
++        
++        t0 = arith.divui(tile_id, tile_num_val)
++        t1 = arith.muli(t0, tile_width_val)
++        thread_global_idx = arith.addi(t1, thread_local_idx)
++
++        t2 = arith.remui(tile_id, tile_num_val)
++        t3 = arith.muli(t2, tile_width_val)
++        thread_global_idy = arith.addi(t3, thread_local_idy)
++
++        kernel_size_h = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), kernel[0]))
++        kernel_size_w = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), kernel[1]))
++        stride_h = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), stride[0]))
++        stride_w = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), stride[1]))
++        init_ele_idx = arith.muli(thread_global_idx, stride_h)
++        init_ele_idy = arith.muli(thread_global_idy, stride_w)
++
++        # Check if the (h, w) is out of the output bounds
++        ult = 6
++        out_size_h_val = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), out_size_h))
++        out_size_w_val = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), out_size_w))
++        isHInBounds = arith.cmpi(ult, thread_global_idx, out_size_h_val)
++        isWInBounds = arith.cmpi(ult, thread_global_idy, out_size_w_val)
++        isInBounds = arith.andi(isHInBounds, isWInBounds)
++        
++        branch0 = scf.IfOp(isInBounds)
++        with ir.InsertionPoint(branch0.then_block):
++            first_ele = memref.LoadOp(input_val, [batch_id, in_channel_id, init_ele_idx, init_ele_idy])
++            loop0 = scf.ForOp(
++                lower_bound=c0.result,
++                upper_bound=kernel_size_h.result,
++                step=c1.result,
++                iter_args=[first_ele.result]
++            )
++            with ir.InsertionPoint(loop0.body):
++                loop1 = scf.ForOp(
++                    lower_bound=c0.result,
++                    upper_bound=kernel_size_w.result,
++                    step=c1.result,
++                    iter_args=[first_ele.result]
++                )
++                with ir.InsertionPoint(loop1.body):
++                    # TODO : loop body
++                    kernel_ele_idx = loop0.body.arguments[0]
++                    kernel_ele_idy = loop1.body.arguments[0]
++                    input_ele_idx = arith.addi(init_ele_idx, kernel_ele_idx)
++                    input_ele_idy = arith.addi(init_ele_idy, kernel_ele_idy)
++                    input_ele = memref.LoadOp(input_val, [batch_id, in_channel_id, input_ele_idx, input_ele_idy])
++                    iter_arg1 = loop1.body.arguments[1]
++                    iter_res1 = arith.maxnumf(iter_arg1, input_ele)
++                    scf.YieldOp([iter_res1])
++
++                iter_arg0 = loop0.body.arguments[1]
++                iter_res0 = arith.maxnumf(loop1, iter_arg0)
++                scf.YieldOp([iter_res0])
++
++            memref.StoreOp(loop0, output_val, [batch_id, in_channel_id, thread_global_idx, thread_global_idy])
++            scf.YieldOp([])
++                
++        gpu.TerminatorOp()
++
++    gpu.HostUnregisterOp(input_cast)
++    gpu.HostUnregisterOp(output_cast)
++
++    return output_val
++
++
++def addmm_op(
++    node: AddMMOp, symbol_table: Dict[Tuple[str, int], ir.Operation]
++):
++    dtype = node.tensor_meta["dtype"]
++    element_type = mlir_element_type_get(dtype)
++    c0 = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), 0))
++    c1 = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), 1))
++    kernels = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), 512))
++
++    # TODO: Reverse the order of the mat2 before multiplication to optimize the cache hit rate
++
++    input_data = symbol_table.get((str(node.args[1]), 0), node.args[1])
++    weight = symbol_table.get((str(node.args[2]), 0), node.args[2])
++    bias = symbol_table.get((str(node.args[0]), 0), node.args[0])
++    # print("input_data: "+str(input_data))
++    # print("weight: "+str(weight))
++    # print("bias: "+str(bias))
++
++    # TODO: Transpose of the mat2 before multiplication to optimize the cache hit rate
+ 
+     output_shape = list(node.tensor_meta["shape"])
+-    element_type = mlir_element_type_get(node.tensor_meta["dtype"])
+-    input_shape = [0] * len(output_shape)
+-    for i, p in enumerate(perm):
+-        input_shape[p] = output_shape[i]
+-
+-    offset = 0
+-    input_stride = generate_strides(input_shape)
+-    output_stride = transpose_strides(input_stride, perm)
+-    result_type = ir.MemRefType.get(
+-        shape=output_shape,
+-        element_type=element_type,
+-        layout=ir.StridedLayoutAttr.get(offset, output_stride)
++    input_shape = input_data.type.shape
++    weight_shape = weight.type.shape
++    # print("output_shape: "+str(output_shape))
++    # print("output_shape: "+str())
++    # print("input_shape: "+str(input_shape))
++    # print("weight_shape: "+str(weight_shape))
++    # print("bias shape: "+str(bias.type.shape))
++
++    # Flatten the input into a one-dimensional format 
++    input_size = tensor_shape_size(input_shape)
++    weight_size = tensor_shape_size(weight_shape)
++    output_size = tensor_shape_size(output_shape)
++    # print("input_size: "+str(input_size))
++    # print("weight_size: "+str(weight_size))
++    # print("output_size: "+str(output_size))
++
++    input_size_c = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), input_size))
++    weight_size_c = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), weight_size))
++    output_size_c = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), output_size))
++    # print("input_size_c: "+str(input_size_c))
++    # print("weight_size_c: "+str(weight_size_c))
++    # print("output_size_c: "+str(output_size_c))
++
++    input_shape_1d = memref.AllocOp(ir.MemRefType.get([1], ir.IndexType.get()), [], [])
++    weight_shape_1d = memref.AllocOp(ir.MemRefType.get([1], ir.IndexType.get()), [], [])
++    bias_shape_1d = memref.AllocOp(ir.MemRefType.get([1], ir.IndexType.get()), [], [])
++    # print("input_shape_1d: "+str(input_shape_1d))
++    # print("weight_shape_1d: "+str(weight_shape_1d))
++    # print("bias_shape_1d: "+str(bias_shape_1d))
++
++    memref.StoreOp(input_size_c, input_shape_1d, [c0])
++    memref.StoreOp(weight_size_c, weight_shape_1d, [c0])
++    memref.StoreOp(output_size_c, bias_shape_1d, [c0])
++
++    input_reshape_type = ir.MemRefType.get([input_size], element_type)
++    weight_reshape_type = ir.MemRefType.get([weight_size], element_type)
++    bias_reshape_type = ir.MemRefType.get([output_size], element_type)
++    output_type = ir.MemRefType.get(output_shape, element_type)
++    # print("input_reshape_type: "+str(input_reshape_type))
++    # print("weight_reshape_type: "+str(weight_reshape_type))
++    # print("bias_reshape_type: "+str(bias_reshape_type))
++    # print("output_type: "+str(output_type))
++
++    input_reshape_1d = memref.ReshapeOp(input_reshape_type, input_data, input_shape_1d)
++    weight_reshape_1d = memref.ReshapeOp(weight_reshape_type, weight, weight_shape_1d)
++    bias_reshape_1d = memref.ReshapeOp(bias_reshape_type, bias, bias_shape_1d)
++    # print("input_reshape: "+str(input_reshape_1d))
++    # print("weight_reshape: "+str(weight_reshape_1d))
++    # print("bias_reshape: "+str(bias_reshape_1d))
++
++
++    unranked_memref_type = ir.UnrankedMemRefType.get(element_type, ir.IntegerAttr.get(ir.IndexType.get(), 0))
++    gpu.HostRegisterOp(memref.CastOp(unranked_memref_type, input_reshape_1d))
++    gpu.HostRegisterOp(memref.CastOp(unranked_memref_type, weight_reshape_1d))
++    gpu.HostRegisterOp(memref.CastOp(unranked_memref_type, bias_reshape_1d))
++
++    row = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), input_shape[0]))
++    col = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), weight_shape[1]))
++    inner_dim = arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), input_shape[1]))
++
++    gpu_kernel = gpu.LaunchOp(
++        asyncToken=None,
++        asyncDependencies=[],
++        gridSizeX=c1.result, gridSizeY=c1.result, gridSizeZ=c1.result,
++        blockSizeX=kernels.result, blockSizeY=c1.result, blockSizeZ=c1.result,
+     )
+-    permute_op = memref.TransposeOp(
+-        result=result_type,
+-        in_=input1,
+-        permutation=perm_attr
++    gpu_kernel_block = ir.Block.create_at_start(
++        gpu_kernel.body,
++        [
++            ir.IndexType.get(), ir.IndexType.get(), ir.IndexType.get(),     # block_idx, block_idy, block_idz
++            ir.IndexType.get(), ir.IndexType.get(), ir.IndexType.get(),     # thread_idx , thread_idy, thread_idz
++            ir.IndexType.get(), ir.IndexType.get(), ir.IndexType.get(),     # grid_size x, grid_size y, grid_size z
++            ir.IndexType.get(), ir.IndexType.get(), ir.IndexType.get(),     # block_size x, block_size y, block_size z
++        ]
+     )
+-    return permute_op
++
++    # TODO: optimize to one dimension
++    with ir.InsertionPoint(gpu_kernel_block):
++        tIdX = gpu_kernel_block.arguments[3]
++        tIdY = gpu_kernel_block.arguments[4]
++        otter_loop = scf.ForOp(
++            lower_bound=tIdX,
++            upper_bound=row,
++            step=gpu_kernel.blockSizeX
++        )
++        with ir.InsertionPoint(otter_loop.body):
++            inner_loop = scf.ForOp(
++                lower_bound=tIdY,
++                upper_bound=col,
++                step=gpu_kernel.blockSizeY
++            )
++            with ir.InsertionPoint(inner_loop.body):
++                initial_sum = arith.ConstantOp(ir.F32Type.get(), ir.FloatAttr.get(ir.F32Type.get(), 0.0))
++
++                mul_loop = scf.ForOp(
++                    lower_bound=c0.result,
++                    upper_bound=inner_dim,
++                    step=c1.result,
++                    iter_args=[initial_sum]
++                )
++                with ir.InsertionPoint(mul_loop.body):
++                    sum = mul_loop.inner_iter_args[0]
++                    mat1_load = memref.LoadOp(input_reshape_1d, [arith.AddIOp(arith.MulIOp(otter_loop.induction_variable, inner_dim).result, mul_loop.induction_variable)])
++                    mat2_load = memref.LoadOp(weight_reshape_1d, [arith.AddIOp(arith.MulIOp(mul_loop.induction_variable, col).result, inner_loop.induction_variable)])
++                    res = arith.MulFOp(mat1_load, mat2_load)
++                    res = arith.AddFOp(sum, res)
++                    scf.YieldOp([res])
++                
++                sum = mul_loop.result
++                bias_load = memref.LoadOp(bias_reshape_1d, [arith.AddIOp(arith.MulIOp(otter_loop.induction_variable, col).result, inner_loop.induction_variable)])
++                res = arith.AddFOp(sum, bias_load)
++                memref.StoreOp(res, bias_reshape_1d, [arith.AddIOp(arith.MulIOp(otter_loop.induction_variable, col).result, inner_loop.induction_variable)])
++                scf.YieldOp([])
++            scf.YieldOp([])
++        gpu.TerminatorOp()
++
++
++    output = memref.AllocOp(ir.MemRefType.get(output_shape, element_type), [], [])
++
++    # FIXME: Dialect `memref' not found for custom op 'memref.expand_shape' 
++    # axis = ir.ArrayAttr.get(
++    #     [
++    #         ir.IntegerAttr.get(ir.IntegerType.get_signless(64), i)
++    #         for i in range(len(output_shape))
++    #     ],
++    #     None,
++    # )
++    # axis = ir.ArrayAttr.get([axis], None)
++    # bias_reshape = memref.ExpandShapeOp(output_type, bias, axis)
++
++    bias_shape = memref.AllocOp(ir.MemRefType.get([len(output_shape)], ir.IndexType.get()), [], [])
++    # print("bias_shape: "+str(bias_shape))
++    for i in range(len(output_shape)):
++        memref.StoreOp(arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), output_shape[i])), bias_shape, [arith.ConstantOp(ir.IndexType.get(), ir.IntegerAttr.get(ir.IndexType.get(), i))])
++
++    bias_reshape = memref.ReshapeOp(output_type, bias, bias_shape)
++    memref.CopyOp(bias_reshape, output)
++    return output
++
+ 
+ ops_registry = {
+     "ReluOp": relu_op,
+     "ViewOp": reshape_op,
+-    "PermuteOp": permute_op
++    "PermuteOp": permute_op,
++    "Conv2dOp": convolution2d_op,
++    "MaxPool2dOp": maxpool2d_op,
++    "AddMMOp": addmm_op
+ }
+diff --git a/frontend/Python/ops/tosa.py b/frontend/Python/ops/tosa.py
+index 839ff26..d9633cf 100644
+--- a/frontend/Python/ops/tosa.py
++++ b/frontend/Python/ops/tosa.py
+@@ -1002,15 +1002,17 @@ def convolution2d_op(node: Conv2dOp, symbol_table):
+     result_element_type = mlir_element_type_get(dtype)
+     out_shape = node.tensor_meta["shape"]
+ 
++    # Prepare Depthwise Conv2D information
++    is_grouped = (list(weight_shape)[1] == 1) and (groups != 1)
++    is_depthwise = (groups == list(weight_shape)[0]) and is_grouped
++
+     # Prepare input channel and output channel.
+-    # TODO: confirm and modify this part.
+     if is_kernel_transposed:
+         in_channels = list(weight_shape)[0]
+-        out_channels = list(weight_shape)[1]
++        out_channels = list(weight_shape)[1] * groups
+     else:
+-        in_channels = list(weight_shape)[1]
++        in_channels = list(weight_shape)[1] * groups
+         out_channels = list(weight_shape)[0]
+-    is_depthwise = (groups == in_channels) or (groups == out_channels)
+ 
+     # Prepare bias tensor.
+     if len(node._parents) == 2:
+@@ -1025,20 +1027,19 @@ def convolution2d_op(node: Conv2dOp, symbol_table):
+     else:
+         bias_tensor = symbol_table.get((str(bias), 0))
+ 
+-    # Prepare input padding.
+-    if len(input_padding) == 1:
+-        input_padding = [input_padding[0]] * 4
+-    elif len(input_padding) == 2:
+-        input_padding = [input_padding[0]] * 2 + [input_padding[1]] * 2
+-
+     # Prepare attributes.
+-    input_padding_attr = ir._denseI64ArrayAttr(input_padding, None)
+     dilation_attr = ir._denseI64ArrayAttr(dilation, None)
+     stride_attr = ir._denseI64ArrayAttr(stride, None)
+ 
+-    # TODO: Convolution 1D
+     # Convolution 2D
+     if len(weight_shape) == 4:
++        # Prepare input padding.
++        if len(input_padding) == 1:
++            input_padding = [input_padding[0]] * 4
++        elif len(input_padding) == 2:
++            input_padding = [input_padding[0]] * 2 + [input_padding[1]] * 2
++        # Prepare input_padding attributes.
++        input_padding_attr = ir._denseI64ArrayAttr(input_padding, None)
+         # If the input layout is NCHW, then convert to NHWC.
+         if node._layout.find("NCHW") != -1:
+             perm_list = [0, 2, 3, 1]
+@@ -1068,9 +1069,9 @@ def convolution2d_op(node: Conv2dOp, symbol_table):
+             out_shape = perm_shape
+         output_type = ir.RankedTensorType.get(out_shape, result_element_type)
+ 
++        # Depthwise Conv2D Operation.
+         if is_depthwise is True:
+-            # Depthwise Conv2D Operation.
+-            # TODO: the layout may lead misunderstanding
++            # If groups == in_channels,out_channels == in_channels
+             if node._layout.find("FCHW") != -1:
+                 perm_list = [2, 3, 0, 1]
+                 perm_const_op = tosa.ConstOp(
+@@ -1166,9 +1167,88 @@ def convolution2d_op(node: Conv2dOp, symbol_table):
+             op = tosa.TransposeOp(
+                 permute_result_type, op.result, perm_const_op.results[0]
+             )
++    # Convolution 1D
++    elif len(weight_shape) == 3:
++        # Prepare input with padding.
++        if input_padding[0] != 0:
++            input_shape = list(ir.RankedTensorType(input_val.type).shape)
++            padded_type = ir.RankedTensorType.get(
++                [
++                    input_shape[0],
++                    input_shape[1],
++                    input_shape[2] + 2 * input_padding[0],
++                ],
++                result_element_type,
++            )
++            pad_values_type = ir.RankedTensorType.get(
++                [3, 2], ir.IntegerType.get_signless(32)
++            )
++            pad_values = ir.DenseElementsAttr.get(
++                numpy.array(
++                    [[0, 0], [0, 0], [input_padding[0], input_padding[0]]],
++                    dtype=numpy.int32,
++                ),
++                type=pad_values_type,
++            )
++            pad_constant = arith.ConstantOp(pad_values_type, pad_values).result
++            input_val = tosa.PadOp(padded_type, input_val, pad_constant)
++        output_type = ir.RankedTensorType.get(out_shape, result_element_type)
++        output_conv = tensor.EmptyOp(list(out_shape), result_element_type)
++        assert groups == 1, "only support one group"
++        # Con1D Operation Without Bias
++        conv_op = linalg.conv_1d_ncw_fcw(
++            input_val,
++            weight_val,
++            outs=[output_conv],
++            strides=stride_attr,
++            dilations=dilation_attr,
++        )
++        output = tensor.EmptyOp(list(out_shape), result_element_type)
++        generic_map = ir.AffineMap.get_permutation(
++            [i for i in range(len(list(out_shape)))]
++        )
++        loop_type = [
++            ir.Attribute.parse("#linalg.iterator_type<parallel>")
++        ] * len(list(out_shape))
++        loop_type[1] = ir.Attribute.parse("#linalg.iterator_type<reduction>")
++        # Add Bias To Conv2d.
++        op = linalg.GenericOp(
++            [output_type],
++            [conv_op, bias_tensor],
++            [output],
++            ir.ArrayAttr.get(
++                [
++                    ir.AffineMapAttr.get(
++                        generic_map.get_submap(
++                            [i for i in range(len(list(out_shape)))]
++                        )
++                    ),
++                    ir.AffineMapAttr.get(generic_map.get_submap([1])),
++                    ir.AffineMapAttr.get(
++                        generic_map.get_submap(
++                            [i for i in range(len(list(out_shape)))]
++                        )
++                    ),
++                ]
++            ),
++            ir.ArrayAttr.get(loop_type),
++        )
++        block = ir.Block.create_at_start(
++            op.region,
++            [
++                result_element_type,
++                ir.RankedTensorType(bias_tensor.type).element_type,
++                result_element_type,
++            ],
++        )
++        add_op = arith.AddFOp(block.arguments[1], block.arguments[0])
++        block.append(add_op)
++        block.append(linalg.YieldOp([add_op.result]))
++
+     return op
+ 
+ 
++
+ def relu_op(node: ReluOp, symbol_table):
+     """
+     Import the tensor relu operation.
+diff --git a/frontend/Python/ops/utils.py b/frontend/Python/ops/utils.py
+index 2b2dfe4..012340d 100644
+--- a/frontend/Python/ops/utils.py
++++ b/frontend/Python/ops/utils.py
+@@ -66,34 +66,3 @@ def tensor_shape_size(shape):
+     for dim in shape:
+         size *= dim
+     return size
+-
+-def generate_strides(shape):
+-    """
+-    Generate strides based on the input matrix shape.
+-    
+-    Args:
+-        shape (list[int]): The shape of the input matrix, e.g., [2, 3, 4].
+-
+-    Returns:
+-        list[int]: The corresponding strides, e.g., [12, 4, 1].
+-    """
+-    strides = []
+-    stride = 1
+-    for dim in reversed(shape):
+-        strides.insert(0, stride)
+-        stride *= dim
+-    return strides
+-
+-def transpose_strides(strides, permutation):
+-    """
+-    Reorder strides based on the input permutation.
+-    
+-    Args:
+-        strides (list[int]): The original strides list, e.g., [12, 4, 1].
+-        permutation (list[int]): The permutation order, e.g., [1, 2, 0].
+-
+-    Returns:
+-        list[int]: The reordered strides list, e.g., [4, 1, 12].
+-    """
+-    transposed_strides = [strides[i] for i in permutation]
+-    return transposed_strides
+diff --git a/llvm b/llvm
+--- a/llvm
++++ b/llvm
+@@ -1 +1 @@
+-Subproject commit 6c59f0e1b0fb56c909ad7c9aad4bde37dc006ae0
++Subproject commit 6c59f0e1b0fb56c909ad7c9aad4bde37dc006ae0-dirty

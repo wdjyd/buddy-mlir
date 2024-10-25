@@ -19,7 +19,8 @@ add_custom_command(
 
 add_custom_command(
   OUTPUT subgraph0.ll
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${BUDDY_EXAMPLES_DIR}/BuddyLeNet/subgraph0.mlir -gpu-kernel-outlining -llvm-request-c-wrappers -convert-vector-to-scf -convert-vector-to-llvm -func-bufferize-dynamic-offset -tensor-bufferize -buffer-deallocation -finalizing-bufferize -expand-strided-metadata  -one-shot-bufferize |
+  COMMAND ${LLVM_MLIR_BINARY_DIR}/mlir-opt  ${BUDDY_EXAMPLES_DIR}/BuddyLeNet/subgraph0.mlir -gpu-kernel-outlining -llvm-request-c-wrappers -convert-vector-to-scf -convert-vector-to-llvm |
+          ${BUDDY_BINARY_DIR}/buddy-opt -func-bufferize-dynamic-offset -tensor-bufferize -buffer-deallocation -finalizing-bufferize -expand-strided-metadata  -one-shot-bufferize |
           ${LLVM_MLIR_BINARY_DIR}/mlir-opt 
             -pass-pipeline "builtin.module(nvvm-attach-target{chip=sm_75 O=3},  gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-arith-to-llvm), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts, gpu-module-to-binary)" |
           ${LLVM_MLIR_BINARY_DIR}/mlir-translate -mlir-to-llvmir -o ${BUDDY_BINARY_DIR}/../examples/BuddyLeNet/subgraph0.ll
