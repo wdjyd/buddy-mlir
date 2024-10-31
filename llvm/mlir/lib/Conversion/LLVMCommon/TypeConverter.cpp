@@ -209,6 +209,12 @@ Type LLVMTypeConverter::getIndexType() const {
   return IntegerType::get(&getContext(), getIndexTypeBitwidth());
 }
 
+LLVM::LLVMPointerType
+LLVMTypeConverter::getPointerType(Type elementType, unsigned int addressSpace) const {
+  return LLVM::LLVMPointerType::get(&getContext(), addressSpace);
+  // return LLVM::LLVMPointerType::get(elementType, addressSpace);
+}
+
 unsigned LLVMTypeConverter::getPointerBitwidth(unsigned addressSpace) const {
   return options.dataLayout.getPointerSizeInBits(addressSpace);
 }

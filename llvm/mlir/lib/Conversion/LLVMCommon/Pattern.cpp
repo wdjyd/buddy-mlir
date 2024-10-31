@@ -58,6 +58,11 @@ Value ConvertToLLVMPattern::createIndexAttrConstant(OpBuilder &builder,
                                           builder.getIndexAttr(value));
 }
 
+Value ConvertToLLVMPattern::createIndexConstant(
+    ConversionPatternRewriter &builder, Location loc, uint64_t value) const {
+  return createIndexAttrConstant(builder, loc, getIndexType(), value);
+}
+
 Value ConvertToLLVMPattern::getStridedElementPtr(
     Location loc, MemRefType type, Value memRefDesc, ValueRange indices,
     ConversionPatternRewriter &rewriter) const {

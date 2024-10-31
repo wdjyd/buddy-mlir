@@ -64,6 +64,10 @@ protected:
   /// integer attribute.
   static Value createIndexAttrConstant(OpBuilder &builder, Location loc,
                                        Type resultType, int64_t value);
+                                       
+  /// Create an LLVM dialect operation defining the given index constant.
+  Value createIndexConstant(ConversionPatternRewriter &builder, Location loc,
+                            uint64_t value) const;
 
   // This is a strided getElementPtr variant that linearizes subscripts as:
   //   `base_offset + index_0 * stride_0 + ... + index_n * stride_n`.

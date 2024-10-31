@@ -19,6 +19,12 @@ MLIR_ASYNC_RUNTIME := ./../llvm/build/lib/libmlir_async_runtime.dylib
 MTRIPLE := x86_64-apple-darwin
 endif
 
+test.ll: test.mlir
+	${MLIR_TRANSLATE} $< -mlir-to-llvmir -o $@
+
+test.mlir: log.mlir
+	${BUDDY_OPT} $< -convert-scf-to-cf -lower-sst-to-llvm -reconcile-unrealized-casts -o $@
+
 kernel.ptx: tmp.mlir
 	@${BUDDY_OPT} $< -convert-vector-to-scf -convert-vector-to-llvm -func-bufferize-dynamic-offset -tensor-bufferize -buffer-deallocation -finalizing-bufferize -expand-strided-metadata  -one-shot-bufferize  | \
 	${MLIR_OPT} -pass-pipeline "builtin.module(gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-nvvm-to-llvm,convert-arith-to-llvm, gpu-to-cubin{chip=sm_70 features=+ptx32}), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts)" | \

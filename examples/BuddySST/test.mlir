@@ -1,0 +1,29 @@
+// This file is from upstream MLIR integration test.
+func.func @main() {
+  %c32 = arith.constant 32 : index
+  %mem0 = memref.alloc() : memref<4x32xf32>
+  %gpu_mem0 = gpu.alloc host_shared () : memref<4x32xf32>
+
+  %cst1 = arith.constant 1.0 : f32
+
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %c2 = arith.constant 2 : index
+  %c3 = arith.constant 3 : index
+  %c4 = arith.constant 4 : index
+
+  gpu.launch blocks(%bx, %by, %bz) in (%grid_x = %c4, %grid_y = %c1, %grid_z = %c1)
+             threads(%tx, %ty, %tz) in (%block_x = %c32, %block_y = %c1, %block_z = %c1) {
+    memref.store %cst1, %gpu_mem0[%bx, %tx] : memref<4x32xf32>
+    gpu.terminator
+  }
+  %t0 = gpu.wait async
+  %t1 = gpu.memcpy async [%t0] %mem0, %gpu_mem0 : memref<4x32xf32>, memref<4x32xf32>
+
+  %cast0 = memref.cast %mem0 : memref<4x32xf32> to memref<*xf32>
+  call @printMemrefF32(%cast0) : (memref<*xf32>) -> ()
+  gpu.dealloc %gpu_mem0 : memref<4x32xf32>
+  return
+}
+
+func.func private @printMemrefF32(memref<*xf32>)

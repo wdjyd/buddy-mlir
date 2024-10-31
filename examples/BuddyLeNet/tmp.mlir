@@ -2,7 +2,7 @@
 #map1 = affine_map<(d0)[s0, s1] -> (d0 * s0 + s1)>
 #map2 = affine_map<(d0, d1) -> (d0 + d1)>
 #map3 = affine_map<(d0, d1) -> (d0 * 2 + d1)>
-module {
+module attributes {gpu.container_module} {
   memref.global "private" constant @__constant_1x1x28x28xf32 : memref<1x1x28x28xf32> = dense<2.000000e+00> {alignment = 64 : i64}
   memref.global "private" constant @__constant_44426xf32 : memref<44426xf32> = dense<1.000000e+00> {alignment = 64 : i64}
   memref.global "private" constant @__constant_1x84xf32 : memref<1x84xf32> = dense<0.000000e+00> {alignment = 64 : i64}
@@ -50,498 +50,1110 @@ module {
     %c1_14 = arith.constant 1 : index
     %0 = affine.apply #map(%c28)[%c0, %c1]
     %1 = affine.apply #map(%c28)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %0, %arg9 = %1, %arg10 = %c1_14) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_14, %arg12 = %c1_14, %arg13 = %c1_14) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = memref.load %arg1[%c0, %c0, %86, %87] : memref<1x1x28x28xf32>
-      memref.store %88, %alloc[%c0, %86, %87, %c0] : memref<1x28x28x1xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_0::@forward_kernel_0 blocks in (%0, %1, %c1_14) threads in (%c1_14, %c1_14, %c1_14)  args(%c1 : index, %c0 : index, %arg1 : memref<1x1x28x28xf32>, %alloc : memref<1x28x28x1xf32>)
     %alloc_15 = memref.alloc() {alignment = 64 : i64} : memref<6x5x5x1xf32>
     %c1_16 = arith.constant 1 : index
     %2 = affine.apply #map(%c6)[%c0, %c1]
     %3 = affine.apply #map(%c5)[%c0, %c1]
     %4 = affine.apply #map(%c5)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %2, %arg9 = %3, %arg10 = %4) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_16, %arg12 = %c1_16, %arg13 = %c1_16) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      %89 = memref.load %expand_shape[%86, %c0, %87, %88] : memref<6x1x5x5xf32>
-      memref.store %89, %alloc_15[%86, %87, %88, %c0] : memref<6x5x5x1xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_1::@forward_kernel_1 blocks in (%2, %3, %4) threads in (%c1_16, %c1_16, %c1_16)  args(%c1 : index, %c0 : index, %expand_shape : memref<6x1x5x5xf32>, %alloc_15 : memref<6x5x5x1xf32>)
     %alloc_17 = memref.alloc() {alignment = 64 : i64} : memref<1x24x24x6xf32>
     %c1_18 = arith.constant 1 : index
     %5 = affine.apply #map(%c24)[%c0, %c1]
     %6 = affine.apply #map(%c24)[%c0, %c1]
     %7 = affine.apply #map(%c6)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %5, %arg9 = %6, %arg10 = %7) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_18, %arg12 = %c1_18, %arg13 = %c1_18) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      memref.store %cst_0, %alloc_17[%c0, %86, %87, %88] : memref<1x24x24x6xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_2::@forward_kernel_2 blocks in (%5, %6, %7) threads in (%c1_18, %c1_18, %c1_18)  args(%c1 : index, %c0 : index, %cst_0 : f32, %alloc_17 : memref<1x24x24x6xf32>)
     %alloc_19 = memref.alloc() {alignment = 64 : i64} : memref<1x24x24x6xf32>
     %c1_20 = arith.constant 1 : index
     %8 = affine.apply #map(%c24)[%c0, %c1]
     %9 = affine.apply #map(%c24)[%c0, %c1]
     %10 = affine.apply #map(%c6)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %8, %arg9 = %9, %arg10 = %10) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_20, %arg12 = %c1_20, %arg13 = %c1_20) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      scf.for %arg14 = %c0 to %c5 step %c1 {
-        scf.for %arg15 = %c0 to %c5 step %c1 {
-          %89 = affine.apply #map2(%86, %arg14)
-          %90 = affine.apply #map2(%87, %arg15)
-          %91 = memref.load %alloc[%c0, %89, %90, %c0] : memref<1x28x28x1xf32>
-          %92 = memref.load %alloc_15[%88, %arg14, %arg15, %c0] : memref<6x5x5x1xf32>
-          %93 = memref.load %alloc_17[%c0, %86, %87, %88] : memref<1x24x24x6xf32>
-          %94 = arith.mulf %91, %92 : f32
-          %95 = arith.addf %93, %94 : f32
-          memref.store %95, %alloc_17[%c0, %86, %87, %88] : memref<1x24x24x6xf32>
-        }
-      }
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_3::@forward_kernel_3 blocks in (%8, %9, %10) threads in (%c1_20, %c1_20, %c1_20)  args(%c1 : index, %c0 : index, %alloc : memref<1x28x28x1xf32>, %alloc_15 : memref<6x5x5x1xf32>, %alloc_17 : memref<1x24x24x6xf32>, %c5 : index)
     %c1_21 = arith.constant 1 : index
     %11 = affine.apply #map(%c24)[%c0, %c1]
     %12 = affine.apply #map(%c24)[%c0, %c1]
     %13 = affine.apply #map(%c6)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %11, %arg9 = %12, %arg10 = %13) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_21, %arg12 = %c1_21, %arg13 = %c1_21) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      %89 = memref.load %subview_1[%88] : memref<6xf32, strided<[1], offset: 150>>
-      %90 = memref.load %alloc_17[%c0, %86, %87, %88] : memref<1x24x24x6xf32>
-      %91 = arith.addf %89, %90 : f32
-      memref.store %91, %alloc_19[%c0, %86, %87, %88] : memref<1x24x24x6xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_4::@forward_kernel_4 blocks in (%11, %12, %13) threads in (%c1_21, %c1_21, %c1_21)  args(%c1 : index, %c0 : index, %subview_1 : memref<6xf32, strided<[1], offset: 150>>, %alloc_17 : memref<1x24x24x6xf32>, %alloc_19 : memref<1x24x24x6xf32>)
     %alloc_22 = memref.alloc() {alignment = 64 : i64} : memref<1x6x24x24xf32>
     %c1_23 = arith.constant 1 : index
     %14 = affine.apply #map(%c6)[%c0, %c1]
     %15 = affine.apply #map(%c24)[%c0, %c1]
     %16 = affine.apply #map(%c24)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %14, %arg9 = %15, %arg10 = %16) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_23, %arg12 = %c1_23, %arg13 = %c1_23) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      %89 = memref.load %alloc_19[%c0, %87, %88, %86] : memref<1x24x24x6xf32>
-      memref.store %89, %alloc_22[%c0, %86, %87, %88] : memref<1x6x24x24xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_5::@forward_kernel_5 blocks in (%14, %15, %16) threads in (%c1_23, %c1_23, %c1_23)  args(%c1 : index, %c0 : index, %alloc_19 : memref<1x24x24x6xf32>, %alloc_22 : memref<1x6x24x24xf32>)
     %17 = memref.get_global @__constant_1x6x24x24xf32 : memref<1x6x24x24xf32>
     %alloc_24 = memref.alloc() {alignment = 64 : i64} : memref<1x6x24x24xf32>
     %c1_25 = arith.constant 1 : index
     %18 = affine.apply #map(%c6)[%c0, %c1]
     %19 = affine.apply #map(%c24)[%c0, %c1]
     %20 = affine.apply #map(%c24)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %18, %arg9 = %19, %arg10 = %20) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_25, %arg12 = %c1_25, %arg13 = %c1_25) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      %89 = memref.load %alloc_22[%c0, %86, %87, %88] : memref<1x6x24x24xf32>
-      %90 = memref.load %17[%c0, %86, %87, %88] : memref<1x6x24x24xf32>
-      %91 = arith.maximumf %89, %90 : f32
-      memref.store %91, %alloc_24[%c0, %86, %87, %88] : memref<1x6x24x24xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_6::@forward_kernel_6 blocks in (%18, %19, %20) threads in (%c1_25, %c1_25, %c1_25)  args(%c1 : index, %c0 : index, %alloc_22 : memref<1x6x24x24xf32>, %17 : memref<1x6x24x24xf32>, %alloc_24 : memref<1x6x24x24xf32>)
     %alloc_26 = memref.alloc() {alignment = 64 : i64} : memref<1x24x24x6xf32>
     %c1_27 = arith.constant 1 : index
     %21 = affine.apply #map(%c24)[%c0, %c1]
     %22 = affine.apply #map(%c24)[%c0, %c1]
     %23 = affine.apply #map(%c6)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %21, %arg9 = %22, %arg10 = %23) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_27, %arg12 = %c1_27, %arg13 = %c1_27) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      %89 = memref.load %alloc_24[%c0, %88, %86, %87] : memref<1x6x24x24xf32>
-      memref.store %89, %alloc_26[%c0, %86, %87, %88] : memref<1x24x24x6xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_7::@forward_kernel_7 blocks in (%21, %22, %23) threads in (%c1_27, %c1_27, %c1_27)  args(%c1 : index, %c0 : index, %alloc_24 : memref<1x6x24x24xf32>, %alloc_26 : memref<1x24x24x6xf32>)
     %alloc_28 = memref.alloc() {alignment = 64 : i64} : memref<1x12x12x6xf32>
     %c1_29 = arith.constant 1 : index
     %24 = affine.apply #map(%c12)[%c0, %c1]
     %25 = affine.apply #map(%c12)[%c0, %c1]
     %26 = affine.apply #map(%c6)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %24, %arg9 = %25, %arg10 = %26) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_29, %arg12 = %c1_29, %arg13 = %c1_29) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      memref.store %cst, %alloc_28[%c0, %86, %87, %88] : memref<1x12x12x6xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_8::@forward_kernel_8 blocks in (%24, %25, %26) threads in (%c1_29, %c1_29, %c1_29)  args(%c1 : index, %c0 : index, %cst : f32, %alloc_28 : memref<1x12x12x6xf32>)
     %c1_30 = arith.constant 1 : index
     %27 = affine.apply #map(%c12)[%c0, %c1]
     %28 = affine.apply #map(%c12)[%c0, %c1]
     %29 = affine.apply #map(%c6)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %27, %arg9 = %28, %arg10 = %29) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_30, %arg12 = %c1_30, %arg13 = %c1_30) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      scf.for %arg14 = %c0 to %c2 step %c1 {
-        scf.for %arg15 = %c0 to %c2 step %c1 {
-          %89 = affine.apply #map3(%86, %arg14)
-          %90 = affine.apply #map3(%87, %arg15)
-          %91 = memref.load %alloc_26[%c0, %89, %90, %88] : memref<1x24x24x6xf32>
-          %92 = memref.load %alloc_28[%c0, %86, %87, %88] : memref<1x12x12x6xf32>
-          %93 = arith.maximumf %92, %91 : f32
-          memref.store %93, %alloc_28[%c0, %86, %87, %88] : memref<1x12x12x6xf32>
-        }
-      }
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_9::@forward_kernel_9 blocks in (%27, %28, %29) threads in (%c1_30, %c1_30, %c1_30)  args(%c1 : index, %c0 : index, %alloc_26 : memref<1x24x24x6xf32>, %alloc_28 : memref<1x12x12x6xf32>, %c2 : index)
     %alloc_31 = memref.alloc() {alignment = 64 : i64} : memref<1x6x12x12xf32>
     %c1_32 = arith.constant 1 : index
     %30 = affine.apply #map(%c6)[%c0, %c1]
     %31 = affine.apply #map(%c12)[%c0, %c1]
     %32 = affine.apply #map(%c12)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %30, %arg9 = %31, %arg10 = %32) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_32, %arg12 = %c1_32, %arg13 = %c1_32) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      %89 = memref.load %alloc_28[%c0, %87, %88, %86] : memref<1x12x12x6xf32>
-      memref.store %89, %alloc_31[%c0, %86, %87, %88] : memref<1x6x12x12xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_10::@forward_kernel_10 blocks in (%30, %31, %32) threads in (%c1_32, %c1_32, %c1_32)  args(%c1 : index, %c0 : index, %alloc_28 : memref<1x12x12x6xf32>, %alloc_31 : memref<1x6x12x12xf32>)
     %alloc_33 = memref.alloc() {alignment = 64 : i64} : memref<1x12x12x6xf32>
     %c1_34 = arith.constant 1 : index
     %33 = affine.apply #map(%c12)[%c0, %c1]
     %34 = affine.apply #map(%c12)[%c0, %c1]
     %35 = affine.apply #map(%c6)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %33, %arg9 = %34, %arg10 = %35) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_34, %arg12 = %c1_34, %arg13 = %c1_34) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      %89 = memref.load %alloc_31[%c0, %88, %86, %87] : memref<1x6x12x12xf32>
-      memref.store %89, %alloc_33[%c0, %86, %87, %88] : memref<1x12x12x6xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_11::@forward_kernel_11 blocks in (%33, %34, %35) threads in (%c1_34, %c1_34, %c1_34)  args(%c1 : index, %c0 : index, %alloc_31 : memref<1x6x12x12xf32>, %alloc_33 : memref<1x12x12x6xf32>)
     %alloc_35 = memref.alloc() {alignment = 64 : i64} : memref<16x5x5x6xf32>
     %c1_36 = arith.constant 1 : index
     %36 = affine.apply #map(%c16)[%c0, %c1]
     %37 = affine.apply #map(%c5)[%c0, %c1]
     %38 = affine.apply #map(%c5)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %36, %arg9 = %37, %arg10 = %38) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_36, %arg12 = %c1_36, %arg13 = %c1_36) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      scf.for %arg14 = %c0 to %c6 step %c1 {
-        %89 = memref.load %expand_shape_3[%86, %arg14, %87, %88] : memref<16x6x5x5xf32, strided<[150, 25, 5, 1], offset: 156>>
-        memref.store %89, %alloc_35[%86, %87, %88, %arg14] : memref<16x5x5x6xf32>
-      }
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_12::@forward_kernel_12 blocks in (%36, %37, %38) threads in (%c1_36, %c1_36, %c1_36)  args(%c1 : index, %c0 : index, %expand_shape_3 : memref<16x6x5x5xf32, strided<[150, 25, 5, 1], offset: 156>>, %alloc_35 : memref<16x5x5x6xf32>, %c6 : index)
     %alloc_37 = memref.alloc() {alignment = 64 : i64} : memref<1x8x8x16xf32>
     %c1_38 = arith.constant 1 : index
     %39 = affine.apply #map(%c8)[%c0, %c1]
     %40 = affine.apply #map(%c8)[%c0, %c1]
     %41 = affine.apply #map(%c16)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %39, %arg9 = %40, %arg10 = %41) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_38, %arg12 = %c1_38, %arg13 = %c1_38) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      memref.store %cst_0, %alloc_37[%c0, %86, %87, %88] : memref<1x8x8x16xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_13::@forward_kernel_13 blocks in (%39, %40, %41) threads in (%c1_38, %c1_38, %c1_38)  args(%c1 : index, %c0 : index, %cst_0 : f32, %alloc_37 : memref<1x8x8x16xf32>)
     %alloc_39 = memref.alloc() {alignment = 64 : i64} : memref<1x8x8x16xf32>
     %c1_40 = arith.constant 1 : index
     %42 = affine.apply #map(%c8)[%c0, %c1]
     %43 = affine.apply #map(%c8)[%c0, %c1]
     %44 = affine.apply #map(%c16)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %42, %arg9 = %43, %arg10 = %44) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_40, %arg12 = %c1_40, %arg13 = %c1_40) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      scf.for %arg14 = %c0 to %c5 step %c1 {
-        scf.for %arg15 = %c0 to %c5 step %c1 {
-          scf.for %arg16 = %c0 to %c6 step %c1 {
-            %89 = affine.apply #map2(%86, %arg14)
-            %90 = affine.apply #map2(%87, %arg15)
-            %91 = memref.load %alloc_33[%c0, %89, %90, %arg16] : memref<1x12x12x6xf32>
-            %92 = memref.load %alloc_35[%88, %arg14, %arg15, %arg16] : memref<16x5x5x6xf32>
-            %93 = memref.load %alloc_37[%c0, %86, %87, %88] : memref<1x8x8x16xf32>
-            %94 = arith.mulf %91, %92 : f32
-            %95 = arith.addf %93, %94 : f32
-            memref.store %95, %alloc_37[%c0, %86, %87, %88] : memref<1x8x8x16xf32>
-          }
-        }
-      }
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_14::@forward_kernel_14 blocks in (%42, %43, %44) threads in (%c1_40, %c1_40, %c1_40)  args(%c1 : index, %c0 : index, %alloc_33 : memref<1x12x12x6xf32>, %alloc_35 : memref<16x5x5x6xf32>, %alloc_37 : memref<1x8x8x16xf32>, %c6 : index, %c5 : index)
     %c1_41 = arith.constant 1 : index
     %45 = affine.apply #map(%c8)[%c0, %c1]
     %46 = affine.apply #map(%c8)[%c0, %c1]
     %47 = affine.apply #map(%c16)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %45, %arg9 = %46, %arg10 = %47) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_41, %arg12 = %c1_41, %arg13 = %c1_41) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      %89 = memref.load %subview_4[%88] : memref<16xf32, strided<[1], offset: 2556>>
-      %90 = memref.load %alloc_37[%c0, %86, %87, %88] : memref<1x8x8x16xf32>
-      %91 = arith.addf %89, %90 : f32
-      memref.store %91, %alloc_39[%c0, %86, %87, %88] : memref<1x8x8x16xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_15::@forward_kernel_15 blocks in (%45, %46, %47) threads in (%c1_41, %c1_41, %c1_41)  args(%c1 : index, %c0 : index, %subview_4 : memref<16xf32, strided<[1], offset: 2556>>, %alloc_37 : memref<1x8x8x16xf32>, %alloc_39 : memref<1x8x8x16xf32>)
     %alloc_42 = memref.alloc() {alignment = 64 : i64} : memref<1x16x8x8xf32>
     %c1_43 = arith.constant 1 : index
     %48 = affine.apply #map(%c16)[%c0, %c1]
     %49 = affine.apply #map(%c8)[%c0, %c1]
     %50 = affine.apply #map(%c8)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %48, %arg9 = %49, %arg10 = %50) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_43, %arg12 = %c1_43, %arg13 = %c1_43) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      %89 = memref.load %alloc_39[%c0, %87, %88, %86] : memref<1x8x8x16xf32>
-      memref.store %89, %alloc_42[%c0, %86, %87, %88] : memref<1x16x8x8xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_16::@forward_kernel_16 blocks in (%48, %49, %50) threads in (%c1_43, %c1_43, %c1_43)  args(%c1 : index, %c0 : index, %alloc_39 : memref<1x8x8x16xf32>, %alloc_42 : memref<1x16x8x8xf32>)
     %51 = memref.get_global @__constant_1x16x8x8xf32 : memref<1x16x8x8xf32>
     %alloc_44 = memref.alloc() {alignment = 64 : i64} : memref<1x16x8x8xf32>
     %c1_45 = arith.constant 1 : index
     %52 = affine.apply #map(%c16)[%c0, %c1]
     %53 = affine.apply #map(%c8)[%c0, %c1]
     %54 = affine.apply #map(%c8)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %52, %arg9 = %53, %arg10 = %54) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_45, %arg12 = %c1_45, %arg13 = %c1_45) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      %89 = memref.load %alloc_42[%c0, %86, %87, %88] : memref<1x16x8x8xf32>
-      %90 = memref.load %51[%c0, %86, %87, %88] : memref<1x16x8x8xf32>
-      %91 = arith.maximumf %89, %90 : f32
-      memref.store %91, %alloc_44[%c0, %86, %87, %88] : memref<1x16x8x8xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_17::@forward_kernel_17 blocks in (%52, %53, %54) threads in (%c1_45, %c1_45, %c1_45)  args(%c1 : index, %c0 : index, %alloc_42 : memref<1x16x8x8xf32>, %51 : memref<1x16x8x8xf32>, %alloc_44 : memref<1x16x8x8xf32>)
     %alloc_46 = memref.alloc() {alignment = 64 : i64} : memref<1x8x8x16xf32>
     %c1_47 = arith.constant 1 : index
     %55 = affine.apply #map(%c8)[%c0, %c1]
     %56 = affine.apply #map(%c8)[%c0, %c1]
     %57 = affine.apply #map(%c16)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %55, %arg9 = %56, %arg10 = %57) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_47, %arg12 = %c1_47, %arg13 = %c1_47) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      %89 = memref.load %alloc_44[%c0, %88, %86, %87] : memref<1x16x8x8xf32>
-      memref.store %89, %alloc_46[%c0, %86, %87, %88] : memref<1x8x8x16xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_18::@forward_kernel_18 blocks in (%55, %56, %57) threads in (%c1_47, %c1_47, %c1_47)  args(%c1 : index, %c0 : index, %alloc_44 : memref<1x16x8x8xf32>, %alloc_46 : memref<1x8x8x16xf32>)
     %alloc_48 = memref.alloc() {alignment = 64 : i64} : memref<1x4x4x16xf32>
     %c1_49 = arith.constant 1 : index
     %58 = affine.apply #map(%c4)[%c0, %c1]
     %59 = affine.apply #map(%c4)[%c0, %c1]
     %60 = affine.apply #map(%c16)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %58, %arg9 = %59, %arg10 = %60) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_49, %arg12 = %c1_49, %arg13 = %c1_49) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      memref.store %cst, %alloc_48[%c0, %86, %87, %88] : memref<1x4x4x16xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_19::@forward_kernel_19 blocks in (%58, %59, %60) threads in (%c1_49, %c1_49, %c1_49)  args(%c1 : index, %c0 : index, %cst : f32, %alloc_48 : memref<1x4x4x16xf32>)
     %c1_50 = arith.constant 1 : index
     %61 = affine.apply #map(%c4)[%c0, %c1]
     %62 = affine.apply #map(%c4)[%c0, %c1]
     %63 = affine.apply #map(%c16)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %61, %arg9 = %62, %arg10 = %63) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_50, %arg12 = %c1_50, %arg13 = %c1_50) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      scf.for %arg14 = %c0 to %c2 step %c1 {
-        scf.for %arg15 = %c0 to %c2 step %c1 {
-          %89 = affine.apply #map3(%86, %arg14)
-          %90 = affine.apply #map3(%87, %arg15)
-          %91 = memref.load %alloc_46[%c0, %89, %90, %88] : memref<1x8x8x16xf32>
-          %92 = memref.load %alloc_48[%c0, %86, %87, %88] : memref<1x4x4x16xf32>
-          %93 = arith.maximumf %92, %91 : f32
-          memref.store %93, %alloc_48[%c0, %86, %87, %88] : memref<1x4x4x16xf32>
-        }
-      }
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_20::@forward_kernel_20 blocks in (%61, %62, %63) threads in (%c1_50, %c1_50, %c1_50)  args(%c1 : index, %c0 : index, %alloc_46 : memref<1x8x8x16xf32>, %alloc_48 : memref<1x4x4x16xf32>, %c2 : index)
     %alloc_51 = memref.alloc() {alignment = 64 : i64} : memref<1x16x4x4xf32>
     %c1_52 = arith.constant 1 : index
     %64 = affine.apply #map(%c16)[%c0, %c1]
     %65 = affine.apply #map(%c4)[%c0, %c1]
     %66 = affine.apply #map(%c4)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %64, %arg9 = %65, %arg10 = %66) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_52, %arg12 = %c1_52, %arg13 = %c1_52) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = affine.apply #map1(%arg4)[%c1, %c0]
-      %89 = memref.load %alloc_48[%c0, %87, %88, %86] : memref<1x4x4x16xf32>
-      memref.store %89, %alloc_51[%c0, %86, %87, %88] : memref<1x16x4x4xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_21::@forward_kernel_21 blocks in (%64, %65, %66) threads in (%c1_52, %c1_52, %c1_52)  args(%c1 : index, %c0 : index, %alloc_48 : memref<1x4x4x16xf32>, %alloc_51 : memref<1x16x4x4xf32>)
     %alloc_53 = memref.alloc() {alignment = 64 : i64} : memref<256x120xf32>
     %c1_54 = arith.constant 1 : index
     %67 = affine.apply #map(%c256)[%c0, %c1]
     %68 = affine.apply #map(%c120)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %67, %arg9 = %68, %arg10 = %c1_54) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_54, %arg12 = %c1_54, %arg13 = %c1_54) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = memref.load %expand_shape_6[%87, %86] : memref<120x256xf32, strided<[256, 1], offset: 2572>>
-      memref.store %88, %alloc_53[%86, %87] : memref<256x120xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_22::@forward_kernel_22 blocks in (%67, %68, %c1_54) threads in (%c1_54, %c1_54, %c1_54)  args(%c1 : index, %c0 : index, %expand_shape_6 : memref<120x256xf32, strided<[256, 1], offset: 2572>>, %alloc_53 : memref<256x120xf32>)
     %collapse_shape = memref.collapse_shape %alloc_51 [[0], [1, 2, 3]] : memref<1x16x4x4xf32> into memref<1x256xf32>
     %expand_shape_55 = memref.expand_shape %collapse_shape [[0, 1], [2]] : memref<1x256xf32> into memref<1x1x256xf32>
     %expand_shape_56 = memref.expand_shape %alloc_53 [[0, 1], [2]] : memref<256x120xf32> into memref<1x256x120xf32>
     %alloc_57 = memref.alloc() {alignment = 64 : i64} : memref<1x1x120xf32>
     %c1_58 = arith.constant 1 : index
     %69 = affine.apply #map(%c120)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %69, %arg9 = %c1_58, %arg10 = %c1_58) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_58, %arg12 = %c1_58, %arg13 = %c1_58) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      memref.store %cst_0, %alloc_57[%c0, %c0, %86] : memref<1x1x120xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_23::@forward_kernel_23 blocks in (%69, %c1_58, %c1_58) threads in (%c1_58, %c1_58, %c1_58)  args(%c1 : index, %c0 : index, %cst_0 : f32, %alloc_57 : memref<1x1x120xf32>)
     %c1_59 = arith.constant 1 : index
     %70 = affine.apply #map(%c120)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %70, %arg9 = %c1_59, %arg10 = %c1_59) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_59, %arg12 = %c1_59, %arg13 = %c1_59) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      scf.for %arg14 = %c0 to %c256 step %c1 {
-        %87 = memref.load %expand_shape_55[%c0, %c0, %arg14] : memref<1x1x256xf32>
-        %88 = memref.load %expand_shape_56[%c0, %arg14, %86] : memref<1x256x120xf32>
-        %89 = memref.load %alloc_57[%c0, %c0, %86] : memref<1x1x120xf32>
-        %90 = arith.mulf %87, %88 : f32
-        %91 = arith.addf %89, %90 : f32
-        memref.store %91, %alloc_57[%c0, %c0, %86] : memref<1x1x120xf32>
-      }
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_24::@forward_kernel_24 blocks in (%70, %c1_59, %c1_59) threads in (%c1_59, %c1_59, %c1_59)  args(%c1 : index, %c0 : index, %expand_shape_55 : memref<1x1x256xf32>, %expand_shape_56 : memref<1x256x120xf32>, %alloc_57 : memref<1x1x120xf32>, %c256 : index)
     %collapse_shape_60 = memref.collapse_shape %alloc_57 [[0, 1], [2]] : memref<1x1x120xf32> into memref<1x120xf32>
     %expand_shape_61 = memref.expand_shape %subview_7 [[0, 1]] : memref<120xf32, strided<[1], offset: 33292>> into memref<1x120xf32, strided<[120, 1], offset: 33292>>
     %alloc_62 = memref.alloc() {alignment = 64 : i64} : memref<1x120xf32>
     %c1_63 = arith.constant 1 : index
     %71 = affine.apply #map(%c120)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %71, %arg9 = %c1_63, %arg10 = %c1_63) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_63, %arg12 = %c1_63, %arg13 = %c1_63) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = memref.load %expand_shape_61[%c0, %86] : memref<1x120xf32, strided<[120, 1], offset: 33292>>
-      %88 = memref.load %collapse_shape_60[%c0, %86] : memref<1x120xf32>
-      %89 = arith.addf %87, %88 : f32
-      memref.store %89, %alloc_62[%c0, %86] : memref<1x120xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_25::@forward_kernel_25 blocks in (%71, %c1_63, %c1_63) threads in (%c1_63, %c1_63, %c1_63)  args(%c1 : index, %c0 : index, %expand_shape_61 : memref<1x120xf32, strided<[120, 1], offset: 33292>>, %collapse_shape_60 : memref<1x120xf32>, %alloc_62 : memref<1x120xf32>)
     %72 = memref.get_global @__constant_1x120xf32 : memref<1x120xf32>
     %alloc_64 = memref.alloc() {alignment = 64 : i64} : memref<1x120xf32>
     %c1_65 = arith.constant 1 : index
     %73 = affine.apply #map(%c120)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %73, %arg9 = %c1_65, %arg10 = %c1_65) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_65, %arg12 = %c1_65, %arg13 = %c1_65) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = memref.load %alloc_62[%c0, %86] : memref<1x120xf32>
-      %88 = memref.load %72[%c0, %86] : memref<1x120xf32>
-      %89 = arith.maximumf %87, %88 : f32
-      memref.store %89, %alloc_64[%c0, %86] : memref<1x120xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_26::@forward_kernel_26 blocks in (%73, %c1_65, %c1_65) threads in (%c1_65, %c1_65, %c1_65)  args(%c1 : index, %c0 : index, %alloc_62 : memref<1x120xf32>, %72 : memref<1x120xf32>, %alloc_64 : memref<1x120xf32>)
     %alloc_66 = memref.alloc() {alignment = 64 : i64} : memref<120x84xf32>
     %c1_67 = arith.constant 1 : index
     %74 = affine.apply #map(%c120)[%c0, %c1]
     %75 = affine.apply #map(%c84)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %74, %arg9 = %75, %arg10 = %c1_67) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_67, %arg12 = %c1_67, %arg13 = %c1_67) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = memref.load %expand_shape_9[%87, %86] : memref<84x120xf32, strided<[120, 1], offset: 33412>>
-      memref.store %88, %alloc_66[%86, %87] : memref<120x84xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_27::@forward_kernel_27 blocks in (%74, %75, %c1_67) threads in (%c1_67, %c1_67, %c1_67)  args(%c1 : index, %c0 : index, %expand_shape_9 : memref<84x120xf32, strided<[120, 1], offset: 33412>>, %alloc_66 : memref<120x84xf32>)
     %expand_shape_68 = memref.expand_shape %alloc_64 [[0, 1], [2]] : memref<1x120xf32> into memref<1x1x120xf32>
     %expand_shape_69 = memref.expand_shape %alloc_66 [[0, 1], [2]] : memref<120x84xf32> into memref<1x120x84xf32>
     %alloc_70 = memref.alloc() {alignment = 64 : i64} : memref<1x1x84xf32>
     %c1_71 = arith.constant 1 : index
     %76 = affine.apply #map(%c84)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %76, %arg9 = %c1_71, %arg10 = %c1_71) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_71, %arg12 = %c1_71, %arg13 = %c1_71) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      memref.store %cst_0, %alloc_70[%c0, %c0, %86] : memref<1x1x84xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_28::@forward_kernel_28 blocks in (%76, %c1_71, %c1_71) threads in (%c1_71, %c1_71, %c1_71)  args(%c1 : index, %c0 : index, %cst_0 : f32, %alloc_70 : memref<1x1x84xf32>)
     %c1_72 = arith.constant 1 : index
     %77 = affine.apply #map(%c84)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %77, %arg9 = %c1_72, %arg10 = %c1_72) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_72, %arg12 = %c1_72, %arg13 = %c1_72) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      scf.for %arg14 = %c0 to %c120 step %c1 {
-        %87 = memref.load %expand_shape_68[%c0, %c0, %arg14] : memref<1x1x120xf32>
-        %88 = memref.load %expand_shape_69[%c0, %arg14, %86] : memref<1x120x84xf32>
-        %89 = memref.load %alloc_70[%c0, %c0, %86] : memref<1x1x84xf32>
-        %90 = arith.mulf %87, %88 : f32
-        %91 = arith.addf %89, %90 : f32
-        memref.store %91, %alloc_70[%c0, %c0, %86] : memref<1x1x84xf32>
-      }
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_29::@forward_kernel_29 blocks in (%77, %c1_72, %c1_72) threads in (%c1_72, %c1_72, %c1_72)  args(%c1 : index, %c0 : index, %expand_shape_68 : memref<1x1x120xf32>, %expand_shape_69 : memref<1x120x84xf32>, %alloc_70 : memref<1x1x84xf32>, %c120 : index)
     %collapse_shape_73 = memref.collapse_shape %alloc_70 [[0, 1], [2]] : memref<1x1x84xf32> into memref<1x84xf32>
     %expand_shape_74 = memref.expand_shape %subview_10 [[0, 1]] : memref<84xf32, strided<[1], offset: 43492>> into memref<1x84xf32, strided<[84, 1], offset: 43492>>
     %alloc_75 = memref.alloc() {alignment = 64 : i64} : memref<1x84xf32>
     %c1_76 = arith.constant 1 : index
     %78 = affine.apply #map(%c84)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %78, %arg9 = %c1_76, %arg10 = %c1_76) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_76, %arg12 = %c1_76, %arg13 = %c1_76) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = memref.load %expand_shape_74[%c0, %86] : memref<1x84xf32, strided<[84, 1], offset: 43492>>
-      %88 = memref.load %collapse_shape_73[%c0, %86] : memref<1x84xf32>
-      %89 = arith.addf %87, %88 : f32
-      memref.store %89, %alloc_75[%c0, %86] : memref<1x84xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_30::@forward_kernel_30 blocks in (%78, %c1_76, %c1_76) threads in (%c1_76, %c1_76, %c1_76)  args(%c1 : index, %c0 : index, %expand_shape_74 : memref<1x84xf32, strided<[84, 1], offset: 43492>>, %collapse_shape_73 : memref<1x84xf32>, %alloc_75 : memref<1x84xf32>)
     %79 = memref.get_global @__constant_1x84xf32 : memref<1x84xf32>
     %alloc_77 = memref.alloc() {alignment = 64 : i64} : memref<1x84xf32>
     %c1_78 = arith.constant 1 : index
     %80 = affine.apply #map(%c84)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %80, %arg9 = %c1_78, %arg10 = %c1_78) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_78, %arg12 = %c1_78, %arg13 = %c1_78) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = memref.load %alloc_75[%c0, %86] : memref<1x84xf32>
-      %88 = memref.load %79[%c0, %86] : memref<1x84xf32>
-      %89 = arith.maximumf %87, %88 : f32
-      memref.store %89, %alloc_77[%c0, %86] : memref<1x84xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_31::@forward_kernel_31 blocks in (%80, %c1_78, %c1_78) threads in (%c1_78, %c1_78, %c1_78)  args(%c1 : index, %c0 : index, %alloc_75 : memref<1x84xf32>, %79 : memref<1x84xf32>, %alloc_77 : memref<1x84xf32>)
     %alloc_79 = memref.alloc() {alignment = 64 : i64} : memref<84x10xf32>
     %c1_80 = arith.constant 1 : index
     %81 = affine.apply #map(%c84)[%c0, %c1]
     %82 = affine.apply #map(%c10)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %81, %arg9 = %82, %arg10 = %c1_80) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_80, %arg12 = %c1_80, %arg13 = %c1_80) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = affine.apply #map1(%arg3)[%c1, %c0]
-      %88 = memref.load %expand_shape_12[%87, %86] : memref<10x84xf32, strided<[84, 1], offset: 43576>>
-      memref.store %88, %alloc_79[%86, %87] : memref<84x10xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_32::@forward_kernel_32 blocks in (%81, %82, %c1_80) threads in (%c1_80, %c1_80, %c1_80)  args(%c1 : index, %c0 : index, %expand_shape_12 : memref<10x84xf32, strided<[84, 1], offset: 43576>>, %alloc_79 : memref<84x10xf32>)
     %expand_shape_81 = memref.expand_shape %alloc_77 [[0, 1], [2]] : memref<1x84xf32> into memref<1x1x84xf32>
     %expand_shape_82 = memref.expand_shape %alloc_79 [[0, 1], [2]] : memref<84x10xf32> into memref<1x84x10xf32>
     %alloc_83 = memref.alloc() {alignment = 64 : i64} : memref<1x1x10xf32>
     %c1_84 = arith.constant 1 : index
     %83 = affine.apply #map(%c10)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %83, %arg9 = %c1_84, %arg10 = %c1_84) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_84, %arg12 = %c1_84, %arg13 = %c1_84) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      memref.store %cst_0, %alloc_83[%c0, %c0, %86] : memref<1x1x10xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_33::@forward_kernel_33 blocks in (%83, %c1_84, %c1_84) threads in (%c1_84, %c1_84, %c1_84)  args(%c1 : index, %c0 : index, %cst_0 : f32, %alloc_83 : memref<1x1x10xf32>)
     %c1_85 = arith.constant 1 : index
     %84 = affine.apply #map(%c10)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %84, %arg9 = %c1_85, %arg10 = %c1_85) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_85, %arg12 = %c1_85, %arg13 = %c1_85) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      scf.for %arg14 = %c0 to %c84 step %c1 {
-        %87 = memref.load %expand_shape_81[%c0, %c0, %arg14] : memref<1x1x84xf32>
-        %88 = memref.load %expand_shape_82[%c0, %arg14, %86] : memref<1x84x10xf32>
-        %89 = memref.load %alloc_83[%c0, %c0, %86] : memref<1x1x10xf32>
-        %90 = arith.mulf %87, %88 : f32
-        %91 = arith.addf %89, %90 : f32
-        memref.store %91, %alloc_83[%c0, %c0, %86] : memref<1x1x10xf32>
-      }
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_34::@forward_kernel_34 blocks in (%84, %c1_85, %c1_85) threads in (%c1_85, %c1_85, %c1_85)  args(%c1 : index, %c0 : index, %expand_shape_81 : memref<1x1x84xf32>, %expand_shape_82 : memref<1x84x10xf32>, %alloc_83 : memref<1x1x10xf32>, %c84 : index)
     %collapse_shape_86 = memref.collapse_shape %alloc_83 [[0, 1], [2]] : memref<1x1x10xf32> into memref<1x10xf32>
     %expand_shape_87 = memref.expand_shape %subview_13 [[0, 1]] : memref<10xf32, strided<[1], offset: 44416>> into memref<1x10xf32, strided<[10, 1], offset: 44416>>
     %alloc_88 = memref.alloc() {alignment = 64 : i64} : memref<1x10xf32>
     %c1_89 = arith.constant 1 : index
     %85 = affine.apply #map(%c10)[%c0, %c1]
-    gpu.launch blocks(%arg2, %arg3, %arg4) in (%arg8 = %85, %arg9 = %c1_89, %arg10 = %c1_89) threads(%arg5, %arg6, %arg7) in (%arg11 = %c1_89, %arg12 = %c1_89, %arg13 = %c1_89) {
-      %86 = affine.apply #map1(%arg2)[%c1, %c0]
-      %87 = memref.load %expand_shape_87[%c0, %86] : memref<1x10xf32, strided<[10, 1], offset: 44416>>
-      %88 = memref.load %collapse_shape_86[%c0, %86] : memref<1x10xf32>
-      %89 = arith.addf %87, %88 : f32
-      memref.store %89, %alloc_88[%c0, %86] : memref<1x10xf32>
-      gpu.terminator
-    } {SCFToGPU_visited}
+    gpu.launch_func  @forward_kernel_35::@forward_kernel_35 blocks in (%85, %c1_89, %c1_89) threads in (%c1_89, %c1_89, %c1_89)  args(%c1 : index, %c0 : index, %expand_shape_87 : memref<1x10xf32, strided<[10, 1], offset: 44416>>, %collapse_shape_86 : memref<1x10xf32>, %alloc_88 : memref<1x10xf32>)
     return %alloc_88 : memref<1x10xf32>
+  }
+  gpu.module @forward_kernel_0 {
+    gpu.func @forward_kernel_0(%arg0: index, %arg1: index, %arg2: memref<1x1x28x28xf32>, %arg3: memref<1x28x28x1xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = memref.load %arg2[%arg1, %arg1, %12, %13] : memref<1x1x28x28xf32>
+      memref.store %14, %arg3[%arg1, %12, %13, %arg1] : memref<1x28x28x1xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_1 {
+    gpu.func @forward_kernel_1(%arg0: index, %arg1: index, %arg2: memref<6x1x5x5xf32>, %arg3: memref<6x5x5x1xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      %15 = memref.load %arg2[%12, %arg1, %13, %14] : memref<6x1x5x5xf32>
+      memref.store %15, %arg3[%12, %13, %14, %arg1] : memref<6x5x5x1xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_2 {
+    gpu.func @forward_kernel_2(%arg0: index, %arg1: index, %arg2: f32, %arg3: memref<1x24x24x6xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      memref.store %arg2, %arg3[%arg1, %12, %13, %14] : memref<1x24x24x6xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_3 {
+    gpu.func @forward_kernel_3(%arg0: index, %arg1: index, %arg2: memref<1x28x28x1xf32>, %arg3: memref<6x5x5x1xf32>, %arg4: memref<1x24x24x6xf32>, %arg5: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      scf.for %arg6 = %arg1 to %arg5 step %arg0 {
+        scf.for %arg7 = %arg1 to %arg5 step %arg0 {
+          %15 = affine.apply #map2(%12, %arg6)
+          %16 = affine.apply #map2(%13, %arg7)
+          %17 = memref.load %arg2[%arg1, %15, %16, %arg1] : memref<1x28x28x1xf32>
+          %18 = memref.load %arg3[%14, %arg6, %arg7, %arg1] : memref<6x5x5x1xf32>
+          %19 = memref.load %arg4[%arg1, %12, %13, %14] : memref<1x24x24x6xf32>
+          %20 = arith.mulf %17, %18 : f32
+          %21 = arith.addf %19, %20 : f32
+          memref.store %21, %arg4[%arg1, %12, %13, %14] : memref<1x24x24x6xf32>
+        }
+      }
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_4 {
+    gpu.func @forward_kernel_4(%arg0: index, %arg1: index, %arg2: memref<6xf32, strided<[1], offset: 150>>, %arg3: memref<1x24x24x6xf32>, %arg4: memref<1x24x24x6xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      %15 = memref.load %arg2[%14] : memref<6xf32, strided<[1], offset: 150>>
+      %16 = memref.load %arg3[%arg1, %12, %13, %14] : memref<1x24x24x6xf32>
+      %17 = arith.addf %15, %16 : f32
+      memref.store %17, %arg4[%arg1, %12, %13, %14] : memref<1x24x24x6xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_5 {
+    gpu.func @forward_kernel_5(%arg0: index, %arg1: index, %arg2: memref<1x24x24x6xf32>, %arg3: memref<1x6x24x24xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      %15 = memref.load %arg2[%arg1, %13, %14, %12] : memref<1x24x24x6xf32>
+      memref.store %15, %arg3[%arg1, %12, %13, %14] : memref<1x6x24x24xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_6 {
+    gpu.func @forward_kernel_6(%arg0: index, %arg1: index, %arg2: memref<1x6x24x24xf32>, %arg3: memref<1x6x24x24xf32>, %arg4: memref<1x6x24x24xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      %15 = memref.load %arg2[%arg1, %12, %13, %14] : memref<1x6x24x24xf32>
+      %16 = memref.load %arg3[%arg1, %12, %13, %14] : memref<1x6x24x24xf32>
+      %17 = arith.maximumf %15, %16 : f32
+      memref.store %17, %arg4[%arg1, %12, %13, %14] : memref<1x6x24x24xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_7 {
+    gpu.func @forward_kernel_7(%arg0: index, %arg1: index, %arg2: memref<1x6x24x24xf32>, %arg3: memref<1x24x24x6xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      %15 = memref.load %arg2[%arg1, %14, %12, %13] : memref<1x6x24x24xf32>
+      memref.store %15, %arg3[%arg1, %12, %13, %14] : memref<1x24x24x6xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_8 {
+    gpu.func @forward_kernel_8(%arg0: index, %arg1: index, %arg2: f32, %arg3: memref<1x12x12x6xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      memref.store %arg2, %arg3[%arg1, %12, %13, %14] : memref<1x12x12x6xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_9 {
+    gpu.func @forward_kernel_9(%arg0: index, %arg1: index, %arg2: memref<1x24x24x6xf32>, %arg3: memref<1x12x12x6xf32>, %arg4: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      scf.for %arg5 = %arg1 to %arg4 step %arg0 {
+        scf.for %arg6 = %arg1 to %arg4 step %arg0 {
+          %15 = affine.apply #map3(%12, %arg5)
+          %16 = affine.apply #map3(%13, %arg6)
+          %17 = memref.load %arg2[%arg1, %15, %16, %14] : memref<1x24x24x6xf32>
+          %18 = memref.load %arg3[%arg1, %12, %13, %14] : memref<1x12x12x6xf32>
+          %19 = arith.maximumf %18, %17 : f32
+          memref.store %19, %arg3[%arg1, %12, %13, %14] : memref<1x12x12x6xf32>
+        }
+      }
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_10 {
+    gpu.func @forward_kernel_10(%arg0: index, %arg1: index, %arg2: memref<1x12x12x6xf32>, %arg3: memref<1x6x12x12xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      %15 = memref.load %arg2[%arg1, %13, %14, %12] : memref<1x12x12x6xf32>
+      memref.store %15, %arg3[%arg1, %12, %13, %14] : memref<1x6x12x12xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_11 {
+    gpu.func @forward_kernel_11(%arg0: index, %arg1: index, %arg2: memref<1x6x12x12xf32>, %arg3: memref<1x12x12x6xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      %15 = memref.load %arg2[%arg1, %14, %12, %13] : memref<1x6x12x12xf32>
+      memref.store %15, %arg3[%arg1, %12, %13, %14] : memref<1x12x12x6xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_12 {
+    gpu.func @forward_kernel_12(%arg0: index, %arg1: index, %arg2: memref<16x6x5x5xf32, strided<[150, 25, 5, 1], offset: 156>>, %arg3: memref<16x5x5x6xf32>, %arg4: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      scf.for %arg5 = %arg1 to %arg4 step %arg0 {
+        %15 = memref.load %arg2[%12, %arg5, %13, %14] : memref<16x6x5x5xf32, strided<[150, 25, 5, 1], offset: 156>>
+        memref.store %15, %arg3[%12, %13, %14, %arg5] : memref<16x5x5x6xf32>
+      }
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_13 {
+    gpu.func @forward_kernel_13(%arg0: index, %arg1: index, %arg2: f32, %arg3: memref<1x8x8x16xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      memref.store %arg2, %arg3[%arg1, %12, %13, %14] : memref<1x8x8x16xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_14 {
+    gpu.func @forward_kernel_14(%arg0: index, %arg1: index, %arg2: memref<1x12x12x6xf32>, %arg3: memref<16x5x5x6xf32>, %arg4: memref<1x8x8x16xf32>, %arg5: index, %arg6: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      scf.for %arg7 = %arg1 to %arg6 step %arg0 {
+        scf.for %arg8 = %arg1 to %arg6 step %arg0 {
+          scf.for %arg9 = %arg1 to %arg5 step %arg0 {
+            %15 = affine.apply #map2(%12, %arg7)
+            %16 = affine.apply #map2(%13, %arg8)
+            %17 = memref.load %arg2[%arg1, %15, %16, %arg9] : memref<1x12x12x6xf32>
+            %18 = memref.load %arg3[%14, %arg7, %arg8, %arg9] : memref<16x5x5x6xf32>
+            %19 = memref.load %arg4[%arg1, %12, %13, %14] : memref<1x8x8x16xf32>
+            %20 = arith.mulf %17, %18 : f32
+            %21 = arith.addf %19, %20 : f32
+            memref.store %21, %arg4[%arg1, %12, %13, %14] : memref<1x8x8x16xf32>
+          }
+        }
+      }
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_15 {
+    gpu.func @forward_kernel_15(%arg0: index, %arg1: index, %arg2: memref<16xf32, strided<[1], offset: 2556>>, %arg3: memref<1x8x8x16xf32>, %arg4: memref<1x8x8x16xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      %15 = memref.load %arg2[%14] : memref<16xf32, strided<[1], offset: 2556>>
+      %16 = memref.load %arg3[%arg1, %12, %13, %14] : memref<1x8x8x16xf32>
+      %17 = arith.addf %15, %16 : f32
+      memref.store %17, %arg4[%arg1, %12, %13, %14] : memref<1x8x8x16xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_16 {
+    gpu.func @forward_kernel_16(%arg0: index, %arg1: index, %arg2: memref<1x8x8x16xf32>, %arg3: memref<1x16x8x8xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      %15 = memref.load %arg2[%arg1, %13, %14, %12] : memref<1x8x8x16xf32>
+      memref.store %15, %arg3[%arg1, %12, %13, %14] : memref<1x16x8x8xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_17 {
+    gpu.func @forward_kernel_17(%arg0: index, %arg1: index, %arg2: memref<1x16x8x8xf32>, %arg3: memref<1x16x8x8xf32>, %arg4: memref<1x16x8x8xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      %15 = memref.load %arg2[%arg1, %12, %13, %14] : memref<1x16x8x8xf32>
+      %16 = memref.load %arg3[%arg1, %12, %13, %14] : memref<1x16x8x8xf32>
+      %17 = arith.maximumf %15, %16 : f32
+      memref.store %17, %arg4[%arg1, %12, %13, %14] : memref<1x16x8x8xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_18 {
+    gpu.func @forward_kernel_18(%arg0: index, %arg1: index, %arg2: memref<1x16x8x8xf32>, %arg3: memref<1x8x8x16xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      %15 = memref.load %arg2[%arg1, %14, %12, %13] : memref<1x16x8x8xf32>
+      memref.store %15, %arg3[%arg1, %12, %13, %14] : memref<1x8x8x16xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_19 {
+    gpu.func @forward_kernel_19(%arg0: index, %arg1: index, %arg2: f32, %arg3: memref<1x4x4x16xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      memref.store %arg2, %arg3[%arg1, %12, %13, %14] : memref<1x4x4x16xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_20 {
+    gpu.func @forward_kernel_20(%arg0: index, %arg1: index, %arg2: memref<1x8x8x16xf32>, %arg3: memref<1x4x4x16xf32>, %arg4: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      scf.for %arg5 = %arg1 to %arg4 step %arg0 {
+        scf.for %arg6 = %arg1 to %arg4 step %arg0 {
+          %15 = affine.apply #map3(%12, %arg5)
+          %16 = affine.apply #map3(%13, %arg6)
+          %17 = memref.load %arg2[%arg1, %15, %16, %14] : memref<1x8x8x16xf32>
+          %18 = memref.load %arg3[%arg1, %12, %13, %14] : memref<1x4x4x16xf32>
+          %19 = arith.maximumf %18, %17 : f32
+          memref.store %19, %arg3[%arg1, %12, %13, %14] : memref<1x4x4x16xf32>
+        }
+      }
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_21 {
+    gpu.func @forward_kernel_21(%arg0: index, %arg1: index, %arg2: memref<1x4x4x16xf32>, %arg3: memref<1x16x4x4xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = affine.apply #map1(%2)[%arg0, %arg1]
+      %15 = memref.load %arg2[%arg1, %13, %14, %12] : memref<1x4x4x16xf32>
+      memref.store %15, %arg3[%arg1, %12, %13, %14] : memref<1x16x4x4xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_22 {
+    gpu.func @forward_kernel_22(%arg0: index, %arg1: index, %arg2: memref<120x256xf32, strided<[256, 1], offset: 2572>>, %arg3: memref<256x120xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = memref.load %arg2[%13, %12] : memref<120x256xf32, strided<[256, 1], offset: 2572>>
+      memref.store %14, %arg3[%12, %13] : memref<256x120xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_23 {
+    gpu.func @forward_kernel_23(%arg0: index, %arg1: index, %arg2: f32, %arg3: memref<1x1x120xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      memref.store %arg2, %arg3[%arg1, %arg1, %12] : memref<1x1x120xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_24 {
+    gpu.func @forward_kernel_24(%arg0: index, %arg1: index, %arg2: memref<1x1x256xf32>, %arg3: memref<1x256x120xf32>, %arg4: memref<1x1x120xf32>, %arg5: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      scf.for %arg6 = %arg1 to %arg5 step %arg0 {
+        %13 = memref.load %arg2[%arg1, %arg1, %arg6] : memref<1x1x256xf32>
+        %14 = memref.load %arg3[%arg1, %arg6, %12] : memref<1x256x120xf32>
+        %15 = memref.load %arg4[%arg1, %arg1, %12] : memref<1x1x120xf32>
+        %16 = arith.mulf %13, %14 : f32
+        %17 = arith.addf %15, %16 : f32
+        memref.store %17, %arg4[%arg1, %arg1, %12] : memref<1x1x120xf32>
+      }
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_25 {
+    gpu.func @forward_kernel_25(%arg0: index, %arg1: index, %arg2: memref<1x120xf32, strided<[120, 1], offset: 33292>>, %arg3: memref<1x120xf32>, %arg4: memref<1x120xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = memref.load %arg2[%arg1, %12] : memref<1x120xf32, strided<[120, 1], offset: 33292>>
+      %14 = memref.load %arg3[%arg1, %12] : memref<1x120xf32>
+      %15 = arith.addf %13, %14 : f32
+      memref.store %15, %arg4[%arg1, %12] : memref<1x120xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_26 {
+    gpu.func @forward_kernel_26(%arg0: index, %arg1: index, %arg2: memref<1x120xf32>, %arg3: memref<1x120xf32>, %arg4: memref<1x120xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = memref.load %arg2[%arg1, %12] : memref<1x120xf32>
+      %14 = memref.load %arg3[%arg1, %12] : memref<1x120xf32>
+      %15 = arith.maximumf %13, %14 : f32
+      memref.store %15, %arg4[%arg1, %12] : memref<1x120xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_27 {
+    gpu.func @forward_kernel_27(%arg0: index, %arg1: index, %arg2: memref<84x120xf32, strided<[120, 1], offset: 33412>>, %arg3: memref<120x84xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = memref.load %arg2[%13, %12] : memref<84x120xf32, strided<[120, 1], offset: 33412>>
+      memref.store %14, %arg3[%12, %13] : memref<120x84xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_28 {
+    gpu.func @forward_kernel_28(%arg0: index, %arg1: index, %arg2: f32, %arg3: memref<1x1x84xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      memref.store %arg2, %arg3[%arg1, %arg1, %12] : memref<1x1x84xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_29 {
+    gpu.func @forward_kernel_29(%arg0: index, %arg1: index, %arg2: memref<1x1x120xf32>, %arg3: memref<1x120x84xf32>, %arg4: memref<1x1x84xf32>, %arg5: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      scf.for %arg6 = %arg1 to %arg5 step %arg0 {
+        %13 = memref.load %arg2[%arg1, %arg1, %arg6] : memref<1x1x120xf32>
+        %14 = memref.load %arg3[%arg1, %arg6, %12] : memref<1x120x84xf32>
+        %15 = memref.load %arg4[%arg1, %arg1, %12] : memref<1x1x84xf32>
+        %16 = arith.mulf %13, %14 : f32
+        %17 = arith.addf %15, %16 : f32
+        memref.store %17, %arg4[%arg1, %arg1, %12] : memref<1x1x84xf32>
+      }
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_30 {
+    gpu.func @forward_kernel_30(%arg0: index, %arg1: index, %arg2: memref<1x84xf32, strided<[84, 1], offset: 43492>>, %arg3: memref<1x84xf32>, %arg4: memref<1x84xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = memref.load %arg2[%arg1, %12] : memref<1x84xf32, strided<[84, 1], offset: 43492>>
+      %14 = memref.load %arg3[%arg1, %12] : memref<1x84xf32>
+      %15 = arith.addf %13, %14 : f32
+      memref.store %15, %arg4[%arg1, %12] : memref<1x84xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_31 {
+    gpu.func @forward_kernel_31(%arg0: index, %arg1: index, %arg2: memref<1x84xf32>, %arg3: memref<1x84xf32>, %arg4: memref<1x84xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = memref.load %arg2[%arg1, %12] : memref<1x84xf32>
+      %14 = memref.load %arg3[%arg1, %12] : memref<1x84xf32>
+      %15 = arith.maximumf %13, %14 : f32
+      memref.store %15, %arg4[%arg1, %12] : memref<1x84xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_32 {
+    gpu.func @forward_kernel_32(%arg0: index, %arg1: index, %arg2: memref<10x84xf32, strided<[84, 1], offset: 43576>>, %arg3: memref<84x10xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = affine.apply #map1(%1)[%arg0, %arg1]
+      %14 = memref.load %arg2[%13, %12] : memref<10x84xf32, strided<[84, 1], offset: 43576>>
+      memref.store %14, %arg3[%12, %13] : memref<84x10xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_33 {
+    gpu.func @forward_kernel_33(%arg0: index, %arg1: index, %arg2: f32, %arg3: memref<1x1x10xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      memref.store %arg2, %arg3[%arg1, %arg1, %12] : memref<1x1x10xf32>
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_34 {
+    gpu.func @forward_kernel_34(%arg0: index, %arg1: index, %arg2: memref<1x1x84xf32>, %arg3: memref<1x84x10xf32>, %arg4: memref<1x1x10xf32>, %arg5: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      scf.for %arg6 = %arg1 to %arg5 step %arg0 {
+        %13 = memref.load %arg2[%arg1, %arg1, %arg6] : memref<1x1x84xf32>
+        %14 = memref.load %arg3[%arg1, %arg6, %12] : memref<1x84x10xf32>
+        %15 = memref.load %arg4[%arg1, %arg1, %12] : memref<1x1x10xf32>
+        %16 = arith.mulf %13, %14 : f32
+        %17 = arith.addf %15, %16 : f32
+        memref.store %17, %arg4[%arg1, %arg1, %12] : memref<1x1x10xf32>
+      }
+      gpu.return
+    }
+  }
+  gpu.module @forward_kernel_35 {
+    gpu.func @forward_kernel_35(%arg0: index, %arg1: index, %arg2: memref<1x10xf32, strided<[10, 1], offset: 44416>>, %arg3: memref<1x10xf32>, %arg4: memref<1x10xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      cf.br ^bb1
+    ^bb1:  // pred: ^bb0
+      %12 = affine.apply #map1(%0)[%arg0, %arg1]
+      %13 = memref.load %arg2[%arg1, %12] : memref<1x10xf32, strided<[10, 1], offset: 44416>>
+      %14 = memref.load %arg3[%arg1, %12] : memref<1x10xf32>
+      %15 = arith.addf %13, %14 : f32
+      memref.store %15, %arg4[%arg1, %12] : memref<1x10xf32>
+      gpu.return
+    }
   }
   func.func @main() {
     %0 = memref.get_global @__constant_44426xf32 : memref<44426xf32>
