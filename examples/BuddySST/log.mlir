@@ -1,176 +1,114 @@
-module attributes {gpu.container_module} {
-  llvm.func @malloc(i64) -> !llvm.ptr
-  llvm.func @main() {
-    %0 = llvm.mlir.constant(32 : index) : i64
-    %1 = llvm.mlir.constant(4 : index) : i64
-    %2 = llvm.mlir.constant(32 : index) : i64
-    %3 = llvm.mlir.constant(1 : index) : i64
-    %4 = llvm.mlir.constant(128 : index) : i64
-    %5 = llvm.mlir.zero : !llvm.ptr
-    %6 = llvm.getelementptr %5[%4] : (!llvm.ptr, i64) -> !llvm.ptr, i32
-    %7 = llvm.ptrtoint %6 : !llvm.ptr to i64
-    %8 = llvm.call @malloc(%7) : (i64) -> !llvm.ptr
-    %9 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)>
-    %10 = llvm.insertvalue %8, %9[0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %11 = llvm.insertvalue %8, %10[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %12 = llvm.mlir.constant(0 : index) : i64
-    %13 = llvm.insertvalue %12, %11[2] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %14 = llvm.insertvalue %1, %13[3, 0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %15 = llvm.insertvalue %2, %14[3, 1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %16 = llvm.insertvalue %2, %15[4, 0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %17 = llvm.insertvalue %3, %16[4, 1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %18 = llvm.mlir.constant(1 : index) : i64
-    %19 = llvm.mlir.constant(4 : index) : i64
-    %20 = llvm.mlir.constant(32 : index) : i64
-    %21 = llvm.mlir.constant(1 : index) : i64
-    %22 = llvm.mlir.constant(128 : index) : i64
-    %23 = llvm.mlir.constant(128 : index) : i64
-    %24 = llvm.mlir.zero : !llvm.ptr
-    %25 = llvm.getelementptr %24[%23] : (!llvm.ptr, i64) -> !llvm.ptr, f32
-    %26 = llvm.ptrtoint %25 : !llvm.ptr to i64
-    %27 = llvm.call @malloc(%26) : (i64) -> !llvm.ptr
-    %28 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)>
-    %29 = llvm.insertvalue %27, %28[0] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %30 = llvm.insertvalue %27, %29[1] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
+module {
+  llvm.func @forward(%arg0: !llvm.ptr, %arg1: !llvm.ptr, %arg2: i64, %arg3: i64, %arg4: i64, %arg5: i64, %arg6: i64) {
+    %0 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)>
+    %1 = llvm.insertvalue %arg0, %0[0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %2 = llvm.insertvalue %arg1, %1[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %3 = llvm.insertvalue %arg2, %2[2] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %4 = llvm.insertvalue %arg3, %3[3, 0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %5 = llvm.insertvalue %arg5, %4[4, 0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %6 = llvm.insertvalue %arg4, %5[3, 1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %7 = llvm.insertvalue %arg6, %6[4, 1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %8 = builtin.unrealized_conversion_cast %7 : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> to memref<4x32xi32>
+    %9 = llvm.mlir.constant(32 : index) : i64
+    %10 = builtin.unrealized_conversion_cast %9 : i64 to index
+    %11 = llvm.mlir.constant(128 : i32) : i32
+    %12 = llvm.mlir.zero : !llvm.ptr
+    %13 = llvm.getelementptr %12[%11] : (!llvm.ptr, i32) -> !llvm.ptr, i32
+    %14 = llvm.ptrtoint %13 : !llvm.ptr to i64
+    %15 = llvm.call @sstcudaMalloc(%14) : (i64) -> !llvm.ptr
+    %16 = llvm.bitcast %15 : !llvm.ptr to !llvm.ptr
+    %17 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)>
+    %18 = llvm.insertvalue %16, %17[0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %19 = llvm.insertvalue %16, %18[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %20 = llvm.mlir.constant(0 : index) : i64
+    %21 = llvm.insertvalue %20, %19[2] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %22 = llvm.mlir.constant(1 : i32) : i32
+    %23 = llvm.mlir.constant(2 : i32) : i32
+    %24 = llvm.mlir.constant(0 : index) : i64
+    %25 = llvm.mlir.constant(1 : index) : i64
+    %26 = builtin.unrealized_conversion_cast %25 : i64 to index
+    %27 = llvm.mlir.constant(2 : index) : i64
+    %28 = llvm.mlir.constant(3 : index) : i64
+    %29 = llvm.mlir.constant(4 : index) : i64
+    %30 = builtin.unrealized_conversion_cast %29 : i64 to index
     %31 = llvm.mlir.constant(0 : index) : i64
-    %32 = llvm.insertvalue %31, %30[2] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %33 = llvm.insertvalue %18, %32[3, 0] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %34 = llvm.insertvalue %19, %33[3, 1] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %35 = llvm.insertvalue %20, %34[3, 2] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %36 = llvm.insertvalue %22, %35[4, 0] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %37 = llvm.insertvalue %20, %36[4, 1] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %38 = llvm.insertvalue %21, %37[4, 2] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %39 = llvm.call @mgpuStreamCreate() : () -> !llvm.ptr
-    %40 = llvm.mlir.constant(4 : index) : i64
-    %41 = llvm.mlir.constant(32 : index) : i64
-    %42 = llvm.mlir.constant(1 : index) : i64
-    %43 = llvm.mlir.constant(128 : index) : i64
-    %44 = llvm.mlir.zero : !llvm.ptr
-    %45 = llvm.getelementptr %44[%43] : (!llvm.ptr, i64) -> !llvm.ptr, i32
-    %46 = llvm.ptrtoint %45 : !llvm.ptr to i64
-    %47 = llvm.mlir.zero : !llvm.ptr
-    %48 = llvm.mlir.constant(0 : i8) : i8
-    %49 = llvm.call @mgpuMemAlloc(%46, %39, %48) : (i64, !llvm.ptr, i8) -> !llvm.ptr
-    %50 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)>
-    %51 = llvm.insertvalue %49, %50[0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %52 = llvm.insertvalue %49, %51[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %53 = llvm.mlir.constant(0 : index) : i64
-    %54 = llvm.insertvalue %53, %52[2] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %55 = llvm.insertvalue %40, %54[3, 0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %56 = llvm.insertvalue %41, %55[3, 1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %57 = llvm.insertvalue %41, %56[4, 0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %58 = llvm.insertvalue %42, %57[4, 1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %59 = llvm.mlir.constant(1 : index) : i64
-    %60 = llvm.mlir.constant(4 : index) : i64
-    %61 = llvm.mlir.constant(32 : index) : i64
-    %62 = llvm.mlir.constant(1 : index) : i64
-    %63 = llvm.mlir.constant(128 : index) : i64
-    %64 = llvm.mlir.constant(128 : index) : i64
-    %65 = llvm.mlir.zero : !llvm.ptr
-    %66 = llvm.getelementptr %65[%64] : (!llvm.ptr, i64) -> !llvm.ptr, f32
-    %67 = llvm.ptrtoint %66 : !llvm.ptr to i64
-    %68 = llvm.mlir.zero : !llvm.ptr
-    %69 = llvm.mlir.constant(0 : i8) : i8
-    %70 = llvm.call @mgpuMemAlloc(%67, %39, %69) : (i64, !llvm.ptr, i8) -> !llvm.ptr
-    %71 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)>
-    %72 = llvm.insertvalue %70, %71[0] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %73 = llvm.insertvalue %70, %72[1] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %74 = llvm.mlir.constant(0 : index) : i64
-    %75 = llvm.insertvalue %74, %73[2] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %76 = llvm.insertvalue %59, %75[3, 0] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %77 = llvm.insertvalue %60, %76[3, 1] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %78 = llvm.insertvalue %61, %77[3, 2] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %79 = llvm.insertvalue %63, %78[4, 0] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %80 = llvm.insertvalue %61, %79[4, 1] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %81 = llvm.insertvalue %62, %80[4, 2] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %82 = llvm.mlir.constant(1 : i32) : i32
-    %83 = llvm.mlir.constant(2 : i32) : i32
-    %84 = llvm.mlir.constant(1.000000e+00 : f32) : f32
-    %85 = llvm.mlir.constant(2.000000e+00 : f32) : f32
-    %86 = llvm.mlir.constant(0 : index) : i64
-    %87 = llvm.mlir.constant(1 : index) : i64
-    %88 = llvm.mlir.constant(2 : index) : i64
-    %89 = llvm.mlir.constant(3 : index) : i64
-    %90 = llvm.mlir.constant(4 : index) : i64
-    %91 = llvm.extractvalue %58[0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %92 = llvm.extractvalue %58[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %93 = llvm.extractvalue %58[2] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %94 = llvm.extractvalue %58[3, 0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %95 = llvm.extractvalue %58[3, 1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %96 = llvm.extractvalue %58[4, 0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %97 = llvm.extractvalue %58[4, 1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %98 = llvm.extractvalue %81[0] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %99 = llvm.extractvalue %81[1] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %100 = llvm.extractvalue %81[2] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %101 = llvm.extractvalue %81[3, 0] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %102 = llvm.extractvalue %81[3, 1] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %103 = llvm.extractvalue %81[3, 2] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %104 = llvm.extractvalue %81[4, 0] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %105 = llvm.extractvalue %81[4, 1] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %106 = llvm.extractvalue %81[4, 2] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    gpu.launch_func <%39 : !llvm.ptr> @main_kernel_0::@main_kernel_0 blocks in (%90, %87, %87) threads in (%0, %87, %87) : i64 args(%82 : i32, %91 : !llvm.ptr, %92 : !llvm.ptr, %93 : i64, %94 : i64, %95 : i64, %96 : i64, %97 : i64, %84 : f32, %98 : !llvm.ptr, %99 : !llvm.ptr, %100 : i64, %101 : i64, %102 : i64, %103 : i64, %104 : i64, %105 : i64, %106 : i64, %86 : i64)
-    %107 = llvm.mlir.constant(128 : index) : i64
-    %108 = llvm.mlir.zero : !llvm.ptr
-    %109 = llvm.getelementptr %108[%107] : (!llvm.ptr, i64) -> !llvm.ptr, i32
-    %110 = llvm.ptrtoint %109 : !llvm.ptr to i64
-    %111 = llvm.extractvalue %58[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %112 = llvm.extractvalue %17[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    llvm.call @mgpuMemcpy(%112, %111, %110, %39) : (!llvm.ptr, !llvm.ptr, i64, !llvm.ptr) -> ()
-    %113 = llvm.mlir.constant(1 : index) : i64
-    %114 = llvm.alloca %113 x !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> : (i64) -> !llvm.ptr
-    llvm.store %17, %114 : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)>, !llvm.ptr
-    %115 = llvm.mlir.constant(2 : index) : i64
-    %116 = llvm.mlir.undef : !llvm.struct<(i64, ptr)>
-    %117 = llvm.insertvalue %115, %116[0] : !llvm.struct<(i64, ptr)> 
-    %118 = llvm.insertvalue %114, %117[1] : !llvm.struct<(i64, ptr)> 
-    llvm.call @mgpuStreamSynchronize(%39) : (!llvm.ptr) -> ()
-    llvm.call @mgpuStreamDestroy(%39) : (!llvm.ptr) -> ()
-    %119 = llvm.extractvalue %118[0] : !llvm.struct<(i64, ptr)> 
-    %120 = llvm.extractvalue %118[1] : !llvm.struct<(i64, ptr)> 
-    llvm.call @printMemrefI32(%119, %120) : (i64, !llvm.ptr) -> ()
-    %121 = llvm.call @mgpuStreamCreate() : () -> !llvm.ptr
-    %122 = llvm.extractvalue %58[0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %123 = llvm.extractvalue %58[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %124 = llvm.extractvalue %58[2] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %125 = llvm.extractvalue %58[3, 0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %126 = llvm.extractvalue %58[3, 1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %127 = llvm.extractvalue %58[4, 0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %128 = llvm.extractvalue %58[4, 1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    gpu.launch_func <%121 : !llvm.ptr> @main_kernel_1::@main_kernel_1 blocks in (%87, %87, %87) threads in (%0, %87, %87) : i64 args(%83 : i32, %122 : !llvm.ptr, %123 : !llvm.ptr, %124 : i64, %125 : i64, %126 : i64, %127 : i64, %128 : i64)
-    %129 = llvm.mlir.constant(128 : index) : i64
-    %130 = llvm.mlir.zero : !llvm.ptr
-    %131 = llvm.getelementptr %130[%129] : (!llvm.ptr, i64) -> !llvm.ptr, i32
-    %132 = llvm.ptrtoint %131 : !llvm.ptr to i64
-    %133 = llvm.extractvalue %58[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %134 = llvm.extractvalue %17[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    llvm.call @mgpuMemcpy(%134, %133, %132, %121) : (!llvm.ptr, !llvm.ptr, i64, !llvm.ptr) -> ()
-    %135 = llvm.mlir.constant(128 : index) : i64
-    %136 = llvm.mlir.zero : !llvm.ptr
-    %137 = llvm.getelementptr %136[%135] : (!llvm.ptr, i64) -> !llvm.ptr, f32
-    %138 = llvm.ptrtoint %137 : !llvm.ptr to i64
-    %139 = llvm.extractvalue %81[1] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    %140 = llvm.extractvalue %38[1] : !llvm.struct<(ptr, ptr, i64, array<3 x i64>, array<3 x i64>)> 
-    llvm.call @mgpuMemcpy(%140, %139, %138, %121) : (!llvm.ptr, !llvm.ptr, i64, !llvm.ptr) -> ()
-    llvm.call @mgpuStreamSynchronize(%121) : (!llvm.ptr) -> ()
-    llvm.call @mgpuStreamDestroy(%121) : (!llvm.ptr) -> ()
-    %141 = llvm.extractvalue %118[0] : !llvm.struct<(i64, ptr)> 
-    %142 = llvm.extractvalue %118[1] : !llvm.struct<(i64, ptr)> 
-    llvm.call @printMemrefI32(%141, %142) : (i64, !llvm.ptr) -> ()
-    %143 = llvm.call @mgpuStreamCreate() : () -> !llvm.ptr
-    %144 = llvm.extractvalue %58[0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    llvm.call @mgpuMemFree(%144, %143) : (!llvm.ptr, !llvm.ptr) -> ()
-    llvm.call @mgpuStreamSynchronize(%143) : (!llvm.ptr) -> ()
-    llvm.call @mgpuStreamDestroy(%143) : (!llvm.ptr) -> ()
+    %32 = builtin.unrealized_conversion_cast %31 : i64 to index
+    %33 = llvm.mlir.constant(0 : index) : i64
+    %34 = builtin.unrealized_conversion_cast %33 : i64 to index
+    %35 = llvm.call @__sstcudaRegisterFatBinary() : () -> i64
+    llvm.call @__sstcudaRegisterFunction(%35, %33) : (i64, i64) -> ()
+    llvm.call @sstcudaConfigureCall(%9, %25, %25, %29, %25, %25, %31) : (i64, i64, i64, i64, i64, i64, i64) -> ()
+    %36 = llvm.mlir.constant(0 : index) : i64
+    %37 = builtin.unrealized_conversion_cast %36 : i64 to index
+    llvm.call @sstSetupInt32Argument(%22, %36) : (i32, i64) -> ()
+    %38 = llvm.mlir.constant(8 : index) : i64
+    %39 = builtin.unrealized_conversion_cast %38 : i64 to index
+    %40 = llvm.extractvalue %21[0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %41 = llvm.extractvalue %21[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %42 = llvm.extractvalue %21[2] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %43 = llvm.extractvalue %21[3, 0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %44 = llvm.extractvalue %21[3, 1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %45 = llvm.extractvalue %21[4, 0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %46 = llvm.extractvalue %21[4, 1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    llvm.call @sstSetupMemrefRankTwoArgument(%40, %41, %42, %43, %44, %45, %46, %38) : (!llvm.ptr, !llvm.ptr, i64, i64, i64, i64, i64, i64) -> ()
+    llvm.call @sstcudaLaunch(%33) : (i64) -> ()
+    %47 = llvm.mlir.constant(false) : i1
+    %48 = llvm.mlir.constant(true) : i1
+    %49 = llvm.extractvalue %21[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %50 = llvm.bitcast %49 : !llvm.ptr to !llvm.ptr
+    %51 = llvm.extractvalue %7[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %52 = llvm.bitcast %51 : !llvm.ptr to !llvm.ptr
+    %53 = llvm.mlir.constant(128 : index) : i64
+    %54 = llvm.mlir.zero : !llvm.ptr
+    %55 = llvm.getelementptr %54[%53] : (!llvm.ptr, i64) -> !llvm.ptr, i32
+    %56 = llvm.ptrtoint %55 : !llvm.ptr to i64
+    llvm.call @sstcudaMemcpy(%52, %50, %56, %48) : (!llvm.ptr, !llvm.ptr, i64, i1) -> ()
+    %57 = llvm.mlir.constant(1 : index) : i64
+    %58 = llvm.alloca %57 x !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> : (i64) -> !llvm.ptr
+    llvm.store %7, %58 : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)>, !llvm.ptr
+    %59 = llvm.mlir.constant(2 : index) : i64
+    %60 = llvm.mlir.undef : !llvm.struct<(i64, ptr)>
+    %61 = llvm.insertvalue %59, %60[0] : !llvm.struct<(i64, ptr)> 
+    %62 = llvm.insertvalue %58, %61[1] : !llvm.struct<(i64, ptr)> 
+    %63 = llvm.mlir.constant(0 : index) : i64
+    %64 = builtin.unrealized_conversion_cast %63 : i64 to index
+    %65 = llvm.mlir.constant(1 : index) : i64
+    %66 = builtin.unrealized_conversion_cast %65 : i64 to index
+    %67 = llvm.call @__sstcudaRegisterFatBinary() : () -> i64
+    llvm.call @__sstcudaRegisterFunction(%67, %65) : (i64, i64) -> ()
+    llvm.call @sstcudaConfigureCall(%9, %25, %25, %29, %25, %25, %63) : (i64, i64, i64, i64, i64, i64, i64) -> ()
+    %68 = llvm.mlir.constant(0 : index) : i64
+    %69 = builtin.unrealized_conversion_cast %68 : i64 to index
+    llvm.call @sstSetupInt32Argument(%23, %68) : (i32, i64) -> ()
+    %70 = llvm.mlir.constant(8 : index) : i64
+    %71 = builtin.unrealized_conversion_cast %70 : i64 to index
+    %72 = llvm.extractvalue %21[0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %73 = llvm.extractvalue %21[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %74 = llvm.extractvalue %21[2] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %75 = llvm.extractvalue %21[3, 0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %76 = llvm.extractvalue %21[3, 1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %77 = llvm.extractvalue %21[4, 0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %78 = llvm.extractvalue %21[4, 1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    llvm.call @sstSetupMemrefRankTwoArgument(%72, %73, %74, %75, %76, %77, %78, %70) : (!llvm.ptr, !llvm.ptr, i64, i64, i64, i64, i64, i64) -> ()
+    llvm.call @sstcudaLaunch(%65) : (i64) -> ()
+    %79 = llvm.extractvalue %21[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %80 = llvm.bitcast %79 : !llvm.ptr to !llvm.ptr
+    %81 = llvm.extractvalue %7[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %82 = llvm.bitcast %81 : !llvm.ptr to !llvm.ptr
+    %83 = llvm.mlir.constant(128 : index) : i64
+    %84 = llvm.mlir.zero : !llvm.ptr
+    %85 = llvm.getelementptr %84[%83] : (!llvm.ptr, i64) -> !llvm.ptr, i32
+    %86 = llvm.ptrtoint %85 : !llvm.ptr to i64
+    llvm.call @sstcudaMemcpy(%82, %80, %86, %48) : (!llvm.ptr, !llvm.ptr, i64, i1) -> ()
     llvm.return
   }
-  gpu.binary @main_kernel_0  [#gpu.object<#nvvm.target<O = 3, chip = "sm_70">, "P\EDU\BA\01\00\10\00\C0\0D\00\00\00\00\00\00\02\00\01\01@\00\00\00(\0B\00\00\00\00\00\00\00\00\00\00\00\00\00\00\07\00\01\00F\00\00\00\00\00\00\00\00\00\00\00\11\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\7FELF\02\01\013\07\00\00\00\00\00\00\00\02\00\BE\00e\00\00\00\00\00\00\00\00\00\00\00\80\0A\00\00\00\00\00\00\00\08\00\00\00\00\00\00F\05F\00@\008\00\03\00@\00\0A\00\01\00\00.shstrtab\00.strtab\00.symtab\00.symtab_shndx\00.nv.info\00.text.main_kernel_0\00.nv.info.main_kernel_0\00.nv.shared.main_kernel_0\00.nv.constant0.main_kernel_0\00.debug_frame\00.rel.debug_frame\00\00.shstrtab\00.strtab\00.symtab\00.symtab_shndx\00.nv.info\00main_kernel_0\00.text.main_kernel_0\00.nv.info.main_kernel_0\00.nv.shared.main_kernel_0\00.nv.constant0.main_kernel_0\00_param\00.debug_frame\00.rel.debug_frame\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00@\00\00\00\03\00\09\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\84\00\00\00\03\00\08\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\A7\00\00\00\03\00\04\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\002\00\00\00\12\10\09\00\00\00\00\00\00\00\00\00\80\01\00\00\00\00\00\00\FF\FF\FF\FF(\00\00\00\00\00\00\00\FF\FF\FF\FF\FF\FF\FF\FF\03\00\04|\FF\FF\FF\FF\0F\0C\81\80\80(\00\08\FF\81\80(\08\81\80\80(\00\00\00\00\00\00\00\FF\FF\FF\FF0\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00p\01\00\00\00\00\00\00\04\02\00\00\00\04\00\00\00\00\0C\81\80\80(\00\04B\00\00\00\00\00\00\04/\08\00\04\00\00\00\0C\00\00\00\04#\08\00\04\00\00\00\00\00\00\00\04\12\08\00\04\00\00\00\00\00\00\00\04\11\08\00\04\00\00\00\00\00\00\00\04\0A\08\00\02\00\00\00`\01\98\00\03\19\98\00\04\17\0C\00\00\00\00\00\12\00\90\00\00\F0!\00\04\17\0C\00\00\00\00\00\11\00\88\00\00\F0!\00\04\17\0C\00\00\00\00\00\10\00\80\00\00\F0!\00\04\17\0C\00\00\00\00\00\0F\00x\00\00\F0!\00\04\17\0C\00\00\00\00\00\0E\00p\00\00\F0!\00\04\17\0C\00\00\00\00\00\0D\00h\00\00\F0!\00\04\17\0C\00\00\00\00\00\0C\00`\00\00\F0!\00\04\17\0C\00\00\00\00\00\0B\00X\00\00\F0!\00\04\17\0C\00\00\00\00\00\0A\00P\00\00\F0!\00\04\17\0C\00\00\00\00\00\09\00H\00\00\F0!\00\04\17\0C\00\00\00\00\00\08\00@\00\00\F0\11\00\04\17\0C\00\00\00\00\00\07\008\00\00\F0!\00\04\17\0C\00\00\00\00\00\06\000\00\00\F0!\00\04\17\0C\00\00\00\00\00\05\00(\00\00\F0!\00\04\17\0C\00\00\00\00\00\04\00 \00\00\F0!\00\04\17\0C\00\00\00\00\00\03\00\18\00\00\F0!\00\04\17\0C\00\00\00\00\00\02\00\10\00\00\F0!\00\04\17\0C\00\00\00\00\00\01\00\08\00\00\F0!\00\04\17\0C\00\00\00\00\00\00\00\00\00\00\F0\11\00\03\1B\FF\00\041\04\00\10\00\00\00\04\1C\04\00\10\01\00\00\00\00\00\00H\00\00\00\00\00\00\00\02\00\00\00\04\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\02z\01\00\00\0A\00\00\00\0F\00\00\00\D0\0F\00\89\F3\FF\FF\FF\00\00\00\FF\00\0E\00\00\E2\0F\00\19y\07\00\00\00\00\00\00%\00\00\00\22\0E\00\02z\00\00\00|\00\00\00\0F\00\00\00\E2\0F\00$t\02\FF\80\00\00\00\FF\00\8E\07\00\E2\0F\00\02z\03\00\00}\00\00\00\0F\00\00\00\E2\0F\00\19y\09\00\00\00\00\00\00!\00\00\00b\0E\00\11z\04\00\00l\00\00\FFH\80\07\00\C8\0F\00\11z\05\00\00m\00\00\03L\0F\00\00\E2\0F\00%v\02\07\00\\\00\00\02\02\8E\07\00\C8\1F\00%x\04\07\80\00\00\00\04\02\8E\07\00\E2\0F\00\02z\07\00\00X\00\00\00\0F\00\00\00\C6\0F\00%x\02\09\04\00\00\00\02\02\8E\07\00\C8/\00%x\04\09\04\00\00\00\04\02\8E\07\00\E4\0F\00$v\09\FF\00h\00\00\FF\00\8E\07\00\C8\0F\00\86s\00\02\07\00\00\00\00\E9\10\00\00\E8\0F\00\86s\00\04\09\00\00\00\00\E9\10\00\00\E2\0F\00My\00\00\00\00\00\00\00\00\80\03\00\EA\0F\00Gy\00\00\F0\FF\FF\FF\FF\FF\83\03\00\C0\0F\00\18y\00\00\00\00\00\00\00\00\00\00\00\C0\0F\00\18y\00\00\00\00\00\00\00\00\00\00\00\C0\0F\00\18y\00\00\00\00\00\00\00\00\00\00\00\C0\0F\00\18y\00\00\00\00\00\00\00\00\00\00\00\C0\0F\00\18y\00\00\00\00\00\00\00\00\00\00\00\C0\0F\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\03\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00@\00\00\00\00\00\00\00\B0\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\0B\00\00\00\03\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\F0\00\00\00\00\00\00\00\C5\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\13\00\00\00\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\B8\01\00\00\00\00\00\00x\00\00\00\00\00\00\00\02\00\00\00\03\00\00\00\08\00\00\00\00\00\00\00\18\00\00\00\00\00\00\00\92\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\000\02\00\00\00\00\00\00p\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00)\00\00\00\00\00\00p\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\A0\02\00\00\00\00\00\000\00\00\00\00\00\00\00\03\00\00\00\00\00\00\00\04\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00F\00\00\00\00\00\00p\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\D0\02\00\00\00\00\00\00T\01\00\00\00\00\00\00\03\00\00\00\09\00\00\00\04\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\9F\00\00\00\09\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00(\04\00\00\00\00\00\00\10\00\00\00\00\00\00\00\03\00\00\00\04\00\00\00\08\00\00\00\00\00\00\00\10\00\00\00\00\00\00\00v\00\00\00\01\00\00\00\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\008\04\00\00\00\00\00\00\F8\01\00\00\00\00\00\00\00\00\00\00\09\00\00\00\04\00\00\00\00\00\00\00\00\00\00\00\00\00\00\002\00\00\00\01\00\00\00\06\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\80\06\00\00\00\00\00\00\80\01\00\00\00\00\00\00\03\00\00\00\04\00\00\0C\80\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\06\00\00\00\05\00\00\00\80\0A\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\A8\00\00\00\00\00\00\00\A8\00\00\00\00\00\00\00\08\00\00\00\00\00\00\00\01\00\00\00\05\00\00\008\04\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00x\03\00\00\00\00\00\00x\03\00\00\00\00\00\00\08\00\00\00\00\00\00\00\01\00\00\00\06\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\08\00\00\00\00\00\00\00\01\00\01\01H\00\00\00\10\02\00\00\00\00\00\00\0D\02\00\00@\00\00\00\00\00\06\00F\00\00\00\00\00\00\00\00\00\00\00\11 \00\00\00\00\00\00\00\00\00\00\00\00\00\00\A2\05\00\00\00\00\00\00\00\00\00\00\00\00\00\00\F2 \0A\0A\0A\0A.version 6.0\0A.target sm_70\0A.address_size 64/\00\FA\19isible .entry main_kernel_0(\0A.param .u32\1B\00\11_\19\006_0,#\00/64#\00\02\1F1#\00\0F\1F2#\00\0F\1F3#\00\0F\1F4#\00\0F\1F5#\00\0F\1F6#\00\0F\167#\00\1Ff\18\01\04\1F8F\00\0F\1F9;\01\10\0F_\01\11\0F`\01\10\1F1a\01\10\1F1b\01\10\1F1c\01\10\1F1d\01\10\1F1e\01\10/17$\00\10\F3\078\0A)\0A{\0A.reg .b32 %r<4>;\11\00\00\9C\01E%f<2\11\00\F2\01b64 %rd<15>;\0A\0Ald_\00\01\DC\02o%r1, [\E2\02\02'];+\00\02B\00\0F,\00\05\101-\00\E4cvta.to.global3\00!2,9\00\0EL\00\1F3L\00\04\1F2K\00\06\114K\00c3;\0Amov\BD\00\00^\00xctaid.x\17\00S3, %t\15\00\91ul.wide.s\1A\002d5,7\00t32;\0Ashl\1C\01#6,\1D\00\822;\0Aadd.s\17\00&7,y\00\176\C4\00\02c\01\0F\0F\01\05.8]x\00\228,\98\00\194`\00&9,f\00U8;\0Ast\F3\00@32 [!\00\10]\1C\00\0F?\01\00/10\8C\01\05)8]\DA\00411,0\00\199|\00712,\A1\01\1A1\1C\00'3,#\00\1A6\1C\00'4,#\00\09\B6\00\13f\B6\00 14\B7\00\C0f1;\0Aret;\0A\0A}\0A\00\00\00">]
-  gpu.binary @main_kernel_1  [#gpu.object<#nvvm.target<O = 3, chip = "sm_70">, "P\EDU\BA\01\00\10\00\A0\0B\00\00\00\00\00\00\02\00\01\01@\00\00\00\A8\09\00\00\00\00\00\00\00\00\00\00\00\00\00\00\07\00\01\00F\00\00\00\00\00\00\00\00\00\00\00\11\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\7FELF\02\01\013\07\00\00\00\00\00\00\00\02\00\BE\00e\00\00\00\00\00\00\00\00\00\00\00\00\09\00\00\00\00\00\00\80\06\00\00\00\00\00\00F\05F\00@\008\00\03\00@\00\0A\00\01\00\00.shstrtab\00.strtab\00.symtab\00.symtab_shndx\00.nv.info\00.text.main_kernel_1\00.nv.info.main_kernel_1\00.nv.shared.main_kernel_1\00.nv.constant0.main_kernel_1\00.debug_frame\00.rel.debug_frame\00\00.shstrtab\00.strtab\00.symtab\00.symtab_shndx\00.nv.info\00main_kernel_1\00.text.main_kernel_1\00.nv.info.main_kernel_1\00.nv.shared.main_kernel_1\00.nv.constant0.main_kernel_1\00_param\00.debug_frame\00.rel.debug_frame\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00@\00\00\00\03\00\09\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\84\00\00\00\03\00\08\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\A7\00\00\00\03\00\04\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\002\00\00\00\12\10\09\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\FF\FF\FF\FF(\00\00\00\00\00\00\00\FF\FF\FF\FF\FF\FF\FF\FF\03\00\04|\FF\FF\FF\FF\0F\0C\81\80\80(\00\08\FF\81\80(\08\81\80\80(\00\00\00\00\00\00\00\FF\FF\FF\FF0\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\F0\00\00\00\00\00\00\00\04\02\00\00\00\04\00\00\00\00\0C\81\80\80(\00\04\22\00\00\00\00\00\00\04/\08\00\04\00\00\00\08\00\00\00\04#\08\00\04\00\00\00\00\00\00\00\04\12\08\00\04\00\00\00\00\00\00\00\04\11\08\00\04\00\00\00\00\00\00\00\04\0A\08\00\02\00\00\00`\01@\00\03\19@\00\04\17\0C\00\00\00\00\00\07\008\00\00\F0!\00\04\17\0C\00\00\00\00\00\06\000\00\00\F0!\00\04\17\0C\00\00\00\00\00\05\00(\00\00\F0!\00\04\17\0C\00\00\00\00\00\04\00 \00\00\F0!\00\04\17\0C\00\00\00\00\00\03\00\18\00\00\F0!\00\04\17\0C\00\00\00\00\00\02\00\10\00\00\F0!\00\04\17\0C\00\00\00\00\00\01\00\08\00\00\F0!\00\04\17\0C\00\00\00\00\00\00\00\00\00\00\F0\11\00\03\1B\FF\00\041\04\00\10\00\00\00\04\1C\04\00\90\00\00\00\00\00\00\00H\00\00\00\00\00\00\00\02\00\00\00\04\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\02z\01\00\00\0A\00\00\00\0F\00\00\00\D0\0F\00\89\F3\FF\FF\FF\00\00\00\FF\00\0E\00\00\E2\0F\00\19y\02\00\00\00\00\00\00%\00\00\00\22\0E\00\02x\03\00\80\00\00\00\00\0F\00\00\00\C6\0F\00\19y\05\00\00\00\00\00\00!\00\00\00d\0E\00%v\02\02\00\\\00\00\03\02\8E\07\00\D0\1F\00%x\02\05\04\00\00\00\02\02\8E\07\00\E2/\00\02z\05\00\00X\00\00\00\0F\00\00\00\D2\0F\00\86s\00\02\05\00\00\00\00\E9\10\00\00\E2\0F\00My\00\00\00\00\00\00\00\00\80\03\00\EA\0F\00Gy\00\00\F0\FF\FF\FF\FF\FF\83\03\00\C0\0F\00\18y\00\00\00\00\00\00\00\00\00\00\00\C0\0F\00\18y\00\00\00\00\00\00\00\00\00\00\00\C0\0F\00\18y\00\00\00\00\00\00\00\00\00\00\00\C0\0F\00\18y\00\00\00\00\00\00\00\00\00\00\00\C0\0F\00\18y\00\00\00\00\00\00\00\00\00\00\00\C0\0F\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\03\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00@\00\00\00\00\00\00\00\B0\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\0B\00\00\00\03\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\F0\00\00\00\00\00\00\00\C5\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\13\00\00\00\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\B8\01\00\00\00\00\00\00x\00\00\00\00\00\00\00\02\00\00\00\03\00\00\00\08\00\00\00\00\00\00\00\18\00\00\00\00\00\00\00\92\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\000\02\00\00\00\00\00\00p\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00)\00\00\00\00\00\00p\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\A0\02\00\00\00\00\00\000\00\00\00\00\00\00\00\03\00\00\00\00\00\00\00\04\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00F\00\00\00\00\00\00p\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\D0\02\00\00\00\00\00\00\A4\00\00\00\00\00\00\00\03\00\00\00\09\00\00\00\04\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\9F\00\00\00\09\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00x\03\00\00\00\00\00\00\10\00\00\00\00\00\00\00\03\00\00\00\04\00\00\00\08\00\00\00\00\00\00\00\10\00\00\00\00\00\00\00v\00\00\00\01\00\00\00\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\88\03\00\00\00\00\00\00\A0\01\00\00\00\00\00\00\00\00\00\00\09\00\00\00\04\00\00\00\00\00\00\00\00\00\00\00\00\00\00\002\00\00\00\01\00\00\00\06\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\80\05\00\00\00\00\00\00\00\01\00\00\00\00\00\00\03\00\00\00\04\00\00\08\80\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\06\00\00\00\05\00\00\00\00\09\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\A8\00\00\00\00\00\00\00\A8\00\00\00\00\00\00\00\08\00\00\00\00\00\00\00\01\00\00\00\05\00\00\00\88\03\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\A0\02\00\00\00\00\00\00\A0\02\00\00\00\00\00\00\08\00\00\00\00\00\00\00\01\00\00\00\06\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\08\00\00\00\00\00\00\00\01\00\01\01H\00\00\00p\01\00\00\00\00\00\00k\01\00\00@\00\00\00\00\00\06\00F\00\00\00\00\00\00\00\00\00\00\00\11 \00\00\00\00\00\00\00\00\00\00\00\00\00\00\D8\02\00\00\00\00\00\00\00\00\00\00\00\00\00\00\F2 \0A\0A\0A\0A.version 6.0\0A.target sm_70\0A.address_size 64/\00\FA\19isible .entry main_kernel_1(\0A.param .u32\1B\00\11_\19\006_0,#\00/64#\00\02\1F1#\00\0F\1F2#\00\0F\1F3#\00\0F\1F4#\00\0F\1F5#\00\0F\1F6#\00\0F\F4\077\0A)\0A{\0A.reg .b32 %r<4>;\11\00\E264 %rd<8>;\0A\0AldL\00\01@\01o%r1, [F\01\02'];+\00\02A\00\0F,\00\05\F4\032];\0Acvta.to.global2\00!2,8\00S;\0Amovq\00\00\13\00xctaid.x\17\00S3, %t\15\00\91ul.wide.s\1A\002d3,7\00t32;\0Ashl\CF\00#4,\1D\00\822;\0Aadd.s\17\00&5,y\00\1E4M\00\226,m\00\1945\00&7,;\00U6;\0Ast\C8\00@32 [!\00\10]\1C\00\B01;\0Aret;\0A\0A}\0A\00\00\00\00\00">]
-  llvm.func @printMemrefI32(i64, !llvm.ptr) attributes {sym_visibility = "private"}
-  llvm.func @mgpuStreamCreate() -> !llvm.ptr
-  llvm.func @mgpuMemAlloc(i64, !llvm.ptr, i8) -> !llvm.ptr
-  llvm.func @mgpuMemcpy(!llvm.ptr, !llvm.ptr, i64, !llvm.ptr)
-  llvm.func @mgpuStreamSynchronize(!llvm.ptr)
-  llvm.func @mgpuStreamDestroy(!llvm.ptr)
-  llvm.func @mgpuMemFree(!llvm.ptr, !llvm.ptr)
+  llvm.func @sstcudaMalloc(i64) -> !llvm.ptr
+  llvm.func @__sstcudaRegisterFatBinary() -> i64
+  llvm.func @__sstcudaRegisterFunction(i64, i64)
+  llvm.func @sstcudaConfigureCall(i64, i64, i64, i64, i64, i64, i64)
+  llvm.func @sstSetupInt32Argument(i32, i64)
+  llvm.func @sstSetupMemrefRankTwoArgument(!llvm.ptr, !llvm.ptr, i64, i64, i64, i64, i64, i64)
+  llvm.func @sstcudaLaunch(i64)
+  llvm.func @sstcudaMemcpy(!llvm.ptr, !llvm.ptr, i64, i1)
 }
 

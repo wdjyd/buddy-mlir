@@ -20,7 +20,7 @@ extern "C"
 void __sstcudaRegisterFunction(uint64_t fatCubinHandle,
                                uint64_t hostFun){
   char deviceFun[256];
-  snprintf(deviceFun, sizeof(deviceFun), "CUDA_kernel%d", static_cast<int>(hostFunc))
+  snprintf(deviceFun, sizeof(deviceFun), "CUDA_kernel_%d", static_cast<int>(hostFun));
   __cudaRegisterFunction(fatCubinHandle, hostFun, deviceFun);
 }
 
@@ -72,8 +72,8 @@ void sstSetupInt32Argument(uint32_t integer, uint64_t offset){
 }
 
 extern "C"
-void sstSetupFloat32Argument(float data, uint64_t offset){
-  cudaSetupArgument((void *) integer, 8, offset);
+void sstSetupFloat32Argument(uint32_t data, uint64_t offset){
+  cudaSetupArgument((void *) data, 8, offset);
 }
 
 extern "C"
@@ -86,7 +86,7 @@ void sstSetupMemrefRankOneArgument(void *allocated, void *aligned, intptr_t offs
 }
 
 extern "C"
-void sstSetupMemrefRankTwoArgument(void *allocated, void *aligned, intptr_t offset_0, intprt_t offset_1, 
+void sstSetupMemrefRankTwoArgument(void *allocated, void *aligned, intptr_t offset_0, intptr_t offset_1, 
                                         intptr_t size_0, intptr_t size_1, intptr_t stride, uint64_t argOffset){
   cudaSetupArgument((void *) allocated, 8, argOffset);
   cudaSetupArgument((void *) aligned, 8, argOffset + 8);
@@ -98,7 +98,7 @@ void sstSetupMemrefRankTwoArgument(void *allocated, void *aligned, intptr_t offs
 }
 
 extern "C"
-void sstSetupMemrefRankThreeArgument(void *allocated, void *aligned, intptr_t offset_0, intprt_t offset_1, intptr_t offset_2, 
+void sstSetupMemrefRankThreeArgument(void *allocated, void *aligned, intptr_t offset_0, intptr_t offset_1, intptr_t offset_2, 
                                         intptr_t size_0, intptr_t size_1, intptr_t size_2, intptr_t stride, uint64_t argOffset){
   cudaSetupArgument((void *) allocated, 8, argOffset);
   cudaSetupArgument((void *) aligned, 8, argOffset + 8);
@@ -112,7 +112,7 @@ void sstSetupMemrefRankThreeArgument(void *allocated, void *aligned, intptr_t of
 }
 
 extern "C"
-void sstSetupMemrefRankFourArgument(void *allocated, void *aligned, intptr_t offset_0, intprt_t offset_1, intptr_t offset_2, intptr_t offset_3
+void sstSetupMemrefRankFourArgument(void *allocated, void *aligned, intptr_t offset_0, intptr_t offset_1, intptr_t offset_2, intptr_t offset_3,
                                         intptr_t size_0, intptr_t size_1, intptr_t size_2, intptr_t size_3, intptr_t stride, uint64_t argOffset){
   cudaSetupArgument((void *) allocated, 8, argOffset);
   cudaSetupArgument((void *) aligned, 8, argOffset + 8);

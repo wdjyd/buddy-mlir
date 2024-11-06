@@ -350,14 +350,12 @@ public:
     SymbolTable symbolTable(getOperation());
     bool modified = false;
     for (auto func : getOperation().getOps<func::FuncOp>()) {
-      int kernel_id = 0;
+      int kernel_id = 1;
       // Insert just after the function.
       Block::iterator insertPt(func->getNextNode());
       auto funcWalkResult = func.walk([&](gpu::LaunchOp op) {
         SetVector<Value> operands;
-        std::string kernelFnName =
-            Twine(op->getParentOfType<func::FuncOp>().getName(), "_kernel_")
-                .str() + std::to_string(kernel_id++);
+        std::string kernelFnName = "CUDA_kernel_" + std::to_string(kernel_id++);
 
         gpu::GPUFuncOp outlinedFunc =
             outlineKernelFuncImpl(op, kernelFnName, operands);

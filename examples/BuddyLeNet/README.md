@@ -26,7 +26,10 @@ $ cmake -G Ninja .. \
     -DBUDDY_MLIR_ENABLE_PYTHON_PACKAGES=ON \
     -DPython3_EXECUTABLE=$(which python3) \
     -DBUDDY_ENABLE_OPENCV=ON \
-    -DOpenCV_DIR=</PATH/TO/OPENCV/BUILD/>
+    -DOpenCV_DIR=/home/newdisk/kt/opencv-4.9.0/build/ \
+    -DJPEG_LIBRARY=$HOME/jpeg/lib/libjpeg.so \
+    -DJPEG_INCLUDE_DIR=$HOME/jpeg/include 
+    
 $ ninja
 $ ninja check-buddy
 ```

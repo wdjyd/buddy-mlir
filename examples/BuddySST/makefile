@@ -4,6 +4,7 @@ MLIR_OPT := ../../llvm/build/bin/mlir-opt
 MLIR_TRANSLATE := ../../llvm/build/bin/mlir-translate
 MLIR_CPU_RUNNER := ../../llvm/build/bin/mlir-cpu-runner
 LLC := ../../llvm/build/bin/llc
+CLANG := ../../llvm/build/bin/clang++
 OPT_FLAG := -O0
 PTXAS = /usr/local/cuda/bin/ptxas
 FATBINARY = /usr/local/cuda/bin/fatbinary
@@ -25,7 +26,7 @@ endif
 
 kernel.ptx: forward.mlir
 	@${BUDDY_OPT} $< -gpu-kernel-outlining -gpu-async-region | \
-	${MLIR_OPT} -pass-pipeline "builtin.module(gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-nvvm-to-llvm,convert-arith-to-llvm, gpu-to-cubin{chip=sm_70 features=+ptx32}), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts)" | \
+	${MLIR_OPT} -pass-pipeline "builtin.module(gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-nvvm-to-llvm,convert-arith-to-llvm, gpu-to-cubin{chip=sm_30 features=+ptx32}), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts)" | \
 	${MLIR_OPT} > /dev/null 
 
 kernel-outlining:
@@ -33,13 +34,13 @@ kernel-outlining:
 	${MLIR_OPT} -o outlining.mlir
 
 gpu-to-sst:	
-	@${BUDDY_OPT} --allow-unregistered-dialect  outlining.mlir -convert-gpu-to-sst -gpu-async-region -gpu-to-llvm -lower-sst-to-llvm -o tmp.mlir
+	@${BUDDY_OPT} --allow-unregistered-dialect  outlining.mlir -convert-gpu-to-sst -o sst.mlir
 
 sst-lower:
 	@${BUDDY_OPT} sst.mlir  -gpu-async-region -gpu-to-llvm -lower-sst-to-llvm -o log.mlir
 
 sst-translate:
-	@${BUDDY_OPT} sst.mlir  -gpu-async-region -gpu-to-llvm -lower-sst-to-llvm -reconcile-unrealized-casts | \
+	@${BUDDY_OPT} sst.mlir  -llvm-request-c-wrappers -gpu-to-llvm -lower-sst-to-llvm -reconcile-unrealized-casts | \
 	${MLIR_TRANSLATE} -mlir-to-llvmir -o log.ll
 
 sst-run:
@@ -49,12 +50,12 @@ sst-run:
 gpu-test-lower:
 	@${MLIR_OPT} forward.mlir -gpu-kernel-outlining -gpu-async-region | \
 	${MLIR_OPT} -pass-pipeline="builtin.module(nvvm-attach-target{chip=sm_70 O=3},\
-	gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-nvvm-to-llvm,convert-arith-to-llvm, gpu-to-cubin{chip=sm_70 features=+ptx32}), gpu-to-llvm, gpu-module-to-binary)" -o log.mlir\
+	gpu.module(convert-gpu-to-nvvm), gpu-to-llvm, gpu-module-to-binary{format=isa})" -o log.mlir
 
 gpu-test-translate:
-	@${MLIR_OPT} forward.mlir -gpu-kernel-outlining -llvm-request-c-wrappers -convert-vector-to-scf -convert-vector-to-llvm | \
-	${MLIR_OPT} -pass-pipeline="builtin.module(nvvm-attach-target{chip=sm_70 O=3},\
-	gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-arith-to-llvm), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts, gpu-module-to-binary)" | \
+	@${MLIR_OPT} forward.mlir -gpu-kernel-outlining -gpu-async-region | \
+	${MLIR_OPT} -pass-pipeline="builtin.module(nvvm-attach-target{chip=sm_70 O=3}, \
+	gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-nvvm-to-llvm,convert-arith-to-llvm, gpu-to-cubin{chip=sm_30 features=+ptx32}), gpu-to-llvm, gpu-module-to-binary)" | \
 	${MLIR_TRANSLATE} -mlir-to-llvmir -o log.ll
 
 gpu-test-run:
@@ -79,14 +80,14 @@ gpu_sha1.out:
 	g++ -m64 -o gpu_sha1.out -Wl,--start-group "dlink.o" "main.o"   "-L/usr/local/cuda/bin/../targets/x86_64-linux/lib/stubs" "-L/usr/local/cuda/bin/../targets/x86_64-linux/lib" -lcudadevrt  -L/usr/local/cuda/lib64 -lcudart  -lrt -lpthread  -ldl  -Wl,--end-group
 	rm main.cpp1.ii main.cpp4.ii main.cudafe1.c main.cudafe1.cpp main.cudafe1.gpu main.cudafe1.stub.c main.fatbin.c main.module_id main.o dlink.fatbin.c dlink.o dlink.reg.c
 
-host_ctrl.o: op_sha1multi.ll gpu_sha1.out
-	$(LLVM_BIN_DIR)/llc -mtriple=x86_64-unknown-linux-gnu -mattr=+sha $< --filetype=obj -o $@
+host_ctrl.o: log.ll gpu_sha1.out
+	$(LLC) -mtriple=x86_64-unknown-linux-gnu $< --filetype=obj -o $@
 
-example.o: SHA1Example.cpp
-	$(CLANG)  -c $< -I $(WAFER_DIR)/include -o $@
+example.o: sst-main-copy.cpp
+	$(CLANG)  -c $< -I/home/newdisk/kt/buddy-mlir/frontend/Interfaces -o $@
 
 sha1_host: example.o host_ctrl.o
-	$(CLANG) host_ctrl.o example.o -L$(WAFER_DIR)/3rdparty/llvm/build/lib -lmlir_c_runner_utils \
-	            -L$(WAFER_BUILD_DIR)/lib -lwafer_sst_runtime \
-				-Wl,-rpath,$(WAFER_DIR)/3rdparty/llvm/build/lib:$(WAFER_BUILD_DIR)/lib \
+	$(CLANG) example.o host_ctrl.o -L/home/newdisk/kt/buddy-mlir/llvm/build/lib -lmlir_c_runner_utils \
+		        -L/home/newdisk/kt/buddy-mlir/build/lib -lwafer_sst_runtime \
+				-Wl,-rpath,/home/newdisk/kt/buddy-mlir/llvm/build/lib:/home/newdisk/kt/buddy-mlir/build/lib \
 				-o kt_run_exe
