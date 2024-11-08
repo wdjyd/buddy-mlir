@@ -25,8 +25,8 @@ MTRIPLE := x86_64-apple-darwin
 endif
 
 kernel.ptx: forward.mlir
-	@${BUDDY_OPT} $< -gpu-kernel-outlining -gpu-async-region | \
-	${MLIR_OPT} -pass-pipeline "builtin.module(gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-nvvm-to-llvm,convert-arith-to-llvm, gpu-to-cubin{chip=sm_30 features=+ptx32}), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts)" | \
+	@${BUDDY_OPT} $< -lower-affine -gpu-kernel-outlining -gpu-async-region | \
+	${MLIR_OPT} -pass-pipeline "builtin.module(gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-nvvm-to-llvm,convert-arith-to-llvm, gpu-to-cubin{chip=sm_30 features=+ptx32}))" | \
 	${MLIR_OPT} > /dev/null 
 
 kernel-outlining:
@@ -34,13 +34,13 @@ kernel-outlining:
 	${MLIR_OPT} -o outlining.mlir
 
 gpu-to-sst:	
-	@${BUDDY_OPT} --allow-unregistered-dialect  outlining.mlir -convert-gpu-to-sst -o sst.mlir
+	@${BUDDY_OPT} --allow-unregistered-dialect  outlining.mlir -convert-gpu-to-sst -o sst_copy.mlir
 
 sst-lower:
-	@${BUDDY_OPT} sst.mlir  -gpu-async-region -gpu-to-llvm -lower-sst-to-llvm -o log.mlir
+	@${BUDDY_OPT} sst.mlir -llvm-request-c-wrappers --gpu-to-llvm -lower-sst-to-llvm -expand-strided-metadata -finalize-memref-to-llvm  -reconcile-unrealized-casts -o log.mlir
 
 sst-translate:
-	@${BUDDY_OPT} sst.mlir  -llvm-request-c-wrappers -gpu-to-llvm -lower-sst-to-llvm -reconcile-unrealized-casts | \
+	@${BUDDY_OPT} sst.mlir -llvm-request-c-wrappers --gpu-to-llvm -lower-sst-to-llvm -expand-strided-metadata -finalize-memref-to-llvm  -reconcile-unrealized-casts | \
 	${MLIR_TRANSLATE} -mlir-to-llvmir -o log.ll
 
 sst-run:

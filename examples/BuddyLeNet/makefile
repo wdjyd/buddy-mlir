@@ -18,11 +18,20 @@ MLIR_ASYNC_RUNTIME := ./../llvm/build/lib/libmlir_async_runtime.dylib
 MTRIPLE := x86_64-apple-darwin
 endif
 
+forward-lower:
+	@${MLIR_OPT} ./forward.mlir \
+		-pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith), empty-tensor-to-alloc-tensor, convert-elementwise-to-linalg, arith-bufferize, func.func(linalg-bufferize, tensor-bufferize), func-bufferize)" | \
+		${MLIR_OPT} -pass-pipeline "builtin.module(func.func(buffer-deallocation-simplification, convert-linalg-to-loops), eliminate-empty-tensors, func.func(llvm-request-c-wrappers),convert-math-to-llvm, convert-math-to-libm, convert-scf-to-cf,  convert-arith-to-llvm, expand-strided-metadata, finalize-memref-to-llvm)" | \
+		${MLIR_OPT} -o f.mlir
+
+arith-conv:
+	${BUDDY_OPT} ./tmp.mlir -convert-maximumf-to-maxnumf -o log.mlir
+
 test-lower:
-	${BUDDY_OPT} ./fake-lenet.mlir \
+	${BUDDY_OPT} ./subgraph0.mlir \
 	-pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" | \
-	${MLIR_OPT} \
-	-one-shot-bufferize="bufferize-function-boundaries=1 function-boundary-type-conversion=identity-layout-map" -convert-linalg-to-parallel-loops -canonicalize -gpu-map-parallel-loops -convert-parallel-loops-to-gpu -gpu-kernel-outlining  -o tmp.mlir
+	${BUDDY_OPT} \
+	-one-shot-bufferize="bufferize-function-boundaries=1 function-boundary-type-conversion=identity-layout-map" -convert-linalg-to-parallel-loops -canonicalize -gpu-map-parallel-loops -convert-parallel-loops-to-gpu -gpu-kernel-outlining -canonicalize -cse -convert-maximumf-to-maxnumf -convert-memcpy-to-sst -o log.mlir
 
 buddy-lenet-lower:
 	@${MLIR_OPT} ./fake-lenet.mlir \

@@ -7,9 +7,9 @@ unsigned int __sstcudaRegisterFatBinary() {
   const char* work_dir = getenv("WAFER_WORKSPACE");
   char file_name[256];
   if (work_dir != NULL) {
-    snprintf(file_name, sizeof(file_name), "%s/gpu_sha1.out", work_dir);
+    snprintf(file_name, sizeof(file_name), "%s/buddy_gpu.out", work_dir);
   } else {
-    snprintf(file_name, sizeof(file_name), "./gpu_sha1.out");
+    snprintf(file_name, sizeof(file_name), "./buddy_gpu.out");
   }
   printf("%s", file_name);
   unsigned int fatbin_handle = __cudaRegisterFatBinary(file_name);
@@ -35,7 +35,7 @@ void sstcudaConfigureCall(unsigned int blockX, unsigned int blockY, unsigned int
 
 extern "C"
 void sstcudaLaunch(uint64_t func){
-  cudaLaunch(func);
+  cudaLaunch(1);
 }
 
 extern "C"
@@ -69,11 +69,21 @@ void sstSetupInt8Argument(uint8_t integer, uint64_t offset){
 extern "C"
 void sstSetupInt32Argument(uint32_t integer, uint64_t offset){
   cudaSetupArgument((void *) integer, 8, offset);
+  // printf("----------------  int data is %d   ------------------\n", integer);
 }
 
 extern "C"
-void sstSetupFloat32Argument(uint32_t data, uint64_t offset){
-  cudaSetupArgument((void *) data, 8, offset);
+void sstSetupFloat32Argument(void* data, uint64_t offset){
+  // float f = static_cast<float>(data);
+  // void* b = &f;
+  // int* c = (int*)b;
+  // int d = *c;
+  // void* e = (int*) d;
+  // printf("----------------  float data is %p   ------------------\n", data);
+  int e = 0x4048f5c3;
+  int*a = (int*)e;
+
+  cudaSetupArgument((void *) a, 8, offset);
 }
 
 extern "C"
@@ -86,45 +96,45 @@ void sstSetupMemrefRankOneArgument(void *allocated, void *aligned, intptr_t offs
 }
 
 extern "C"
-void sstSetupMemrefRankTwoArgument(void *allocated, void *aligned, intptr_t offset_0, intptr_t offset_1, 
-                                        intptr_t size_0, intptr_t size_1, intptr_t stride, uint64_t argOffset){
+void sstSetupMemrefRankTwoArgument(void *allocated, void *aligned, intptr_t offset, intptr_t size_0, intptr_t size_1, 
+                                        intptr_t stride_0, intptr_t stride_1, uint64_t argOffset){
   cudaSetupArgument((void *) allocated, 8, argOffset);
   cudaSetupArgument((void *) aligned, 8, argOffset + 8);
-  cudaSetupArgument((void *) offset_0, 8, argOffset + 16);
-  cudaSetupArgument((void *) offset_1, 8, argOffset + 24);
-  cudaSetupArgument((void *) size_0, 8, argOffset + 32);
-  cudaSetupArgument((void *) size_1, 8, argOffset + 40);
-  cudaSetupArgument((void *) stride, 8, argOffset + 48);
+  cudaSetupArgument((void *) offset, 8, argOffset + 16);
+  cudaSetupArgument((void *) size_0, 8, argOffset + 24);
+  cudaSetupArgument((void *) size_1, 8, argOffset + 32);
+  cudaSetupArgument((void *) stride_0, 8, argOffset + 40);
+  cudaSetupArgument((void *) stride_1, 8, argOffset + 48);
 }
 
 extern "C"
-void sstSetupMemrefRankThreeArgument(void *allocated, void *aligned, intptr_t offset_0, intptr_t offset_1, intptr_t offset_2, 
-                                        intptr_t size_0, intptr_t size_1, intptr_t size_2, intptr_t stride, uint64_t argOffset){
+void sstSetupMemrefRankThreeArgument(void *allocated, void *aligned, intptr_t offset, intptr_t size_0, intptr_t size_1, intptr_t size_2,
+                                        intptr_t stride_0, intptr_t stride_1, intptr_t stride_2, uint64_t argOffset){
   cudaSetupArgument((void *) allocated, 8, argOffset);
   cudaSetupArgument((void *) aligned, 8, argOffset + 8);
-  cudaSetupArgument((void *) offset_0, 8, argOffset + 16);
-  cudaSetupArgument((void *) offset_1, 8, argOffset + 24);
-  cudaSetupArgument((void *) offset_2, 8, argOffset + 32);
-  cudaSetupArgument((void *) size_0, 8, argOffset + 40);
-  cudaSetupArgument((void *) size_1, 8, argOffset + 48);
-  cudaSetupArgument((void *) size_2, 8, argOffset + 56);
-  cudaSetupArgument((void *) stride, 8, argOffset + 64);
+  cudaSetupArgument((void *) offset, 8, argOffset + 16);
+  cudaSetupArgument((void *) size_0, 8, argOffset + 24);
+  cudaSetupArgument((void *) size_1, 8, argOffset + 32);
+  cudaSetupArgument((void *) size_2, 8, argOffset + 40);
+  cudaSetupArgument((void *) stride_0, 8, argOffset + 48);
+  cudaSetupArgument((void *) stride_1, 8, argOffset + 56);
+  cudaSetupArgument((void *) stride_2, 8, argOffset + 64);
 }
 
 extern "C"
-void sstSetupMemrefRankFourArgument(void *allocated, void *aligned, intptr_t offset_0, intptr_t offset_1, intptr_t offset_2, intptr_t offset_3,
-                                        intptr_t size_0, intptr_t size_1, intptr_t size_2, intptr_t size_3, intptr_t stride, uint64_t argOffset){
+void sstSetupMemrefRankFourArgument(void *allocated, void *aligned, intptr_t offset, intptr_t size_0, intptr_t size_1, intptr_t size_2, intptr_t size_3,
+                                        intptr_t stride_0, intptr_t stride_1, intptr_t stride_2, intptr_t stride_3, uint64_t argOffset){
   cudaSetupArgument((void *) allocated, 8, argOffset);
   cudaSetupArgument((void *) aligned, 8, argOffset + 8);
-  cudaSetupArgument((void *) offset_0, 8, argOffset + 16);
-  cudaSetupArgument((void *) offset_1, 8, argOffset + 24);
-  cudaSetupArgument((void *) offset_2, 8, argOffset + 32);
-  cudaSetupArgument((void *) offset_3, 8, argOffset + 40);
-  cudaSetupArgument((void *) size_0, 8, argOffset + 48);
-  cudaSetupArgument((void *) size_1, 8, argOffset + 56);
-  cudaSetupArgument((void *) size_2, 8, argOffset + 64);
-  cudaSetupArgument((void *) size_3, 8, argOffset + 72);
-  cudaSetupArgument((void *) stride, 8, argOffset + 80);
+  cudaSetupArgument((void *) offset, 8, argOffset + 16);
+  cudaSetupArgument((void *) size_0, 8, argOffset + 24);
+  cudaSetupArgument((void *) size_1, 8, argOffset + 32);
+  cudaSetupArgument((void *) size_2, 8, argOffset + 40);
+  cudaSetupArgument((void *) size_3, 8, argOffset + 48);
+  cudaSetupArgument((void *) stride_0, 8, argOffset + 56);
+  cudaSetupArgument((void *) stride_1, 8, argOffset + 64);
+  cudaSetupArgument((void *) stride_2, 8, argOffset + 72);
+  cudaSetupArgument((void *) stride_3, 8, argOffset + 80);
 }
 
 extern "C"

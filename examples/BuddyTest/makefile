@@ -68,3 +68,17 @@ gpu-conv2d-run:
 	${MLIR_OPT} -pass-pipeline="builtin.module(nvvm-attach-target{chip=sm_70 O=3},\
 	gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-arith-to-llvm), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts, gpu-module-to-binary)" | \
 	${MLIR_CPU_RUNNER} -entry-point-result=void -shared-libs=${MLIR_RUNNER_UTILS} -shared-libs=${MLIR_CUDA_RUNTIME} 
+
+memref-lower:
+	@${MLIR_OPT} ./test.mlir \
+		-convert-vector-to-llvm \
+		-finalize-memref-to-llvm -convert-arith-to-llvm  \
+		-convert-func-to-llvm -reconcile-unrealized-casts \
+		-o ./log.mlir
+
+memref-translate:
+	@${MLIR_OPT} ./test.mlir \
+		-convert-vector-to-llvm \
+		-finalize-memref-to-llvm -convert-arith-to-llvm  \
+		-convert-func-to-llvm -reconcile-unrealized-casts | \
+	${MLIR_TRANSLATE} --mlir-to-llvmir -o log.ll

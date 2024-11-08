@@ -38,4 +38,7 @@ target_link_libraries(buddy-opt
   FuncBufferizeDynamicOffset
   LowerSSTToLLVM
   LowerGPUToSST
+  ConvertMemcpyToGPU
+  ConvertMemcpyToSST
+  ConvertArithMaximumf
   )

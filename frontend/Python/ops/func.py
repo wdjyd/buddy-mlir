@@ -35,15 +35,7 @@ def func_op(node: FuncOp, symbol_table: Dict[Tuple[str, int], ir.Operation]):
     for arg in node.args:
         shape = list(arg.shape)
         mlir_dtype = mlir_element_type_get(arg.dtype)
-        stride = []
-        for dim, dim_size in enumerate(shape):
-            stride.append(
-                functools.reduce(lambda x, y: x * y, shape[dim + 1 :] + [1])
-            )
-        memref_attr = ir.Attribute.parse(
-            "strided<{}, offset: ?>".format(stride)
-        )
-        arguments.append(ir.MemRefType.get(shape, mlir_dtype, memref_attr))
+        arguments.append(ir.MemRefType.get(shape, mlir_dtype))
     results = []
     for i, shape in enumerate(node.tensor_meta["shape"]):
         mlir_dtype = mlir_element_type_get(node.tensor_meta["dtype"][i])
@@ -62,18 +54,10 @@ def call_op(node: CallOp, symbol_table: Dict[Tuple[str, int], ir.Operation]):
     for i, arg in enumerate(node.args):
         input_node = symbol_table.get((str(arg), node._args_index[i]))
         memref_type = ir.MemRefType(input_node.type)
-        stride = []
         shape = memref_type.shape
-        for dim, dim_size in enumerate(shape):
-            stride.append(
-                functools.reduce(lambda x, y: x * y, shape[dim + 1 :] + [1])
-            )
-        memref_attr = ir.Attribute.parse(
-            "strided<{}, offset: ?>".format(stride)
-        )
-        dest = ir.MemRefType.get(shape, memref_type.element_type, memref_attr)
-        cast_op = memref.CastOp(dest, input_node)
-        arguments.append(cast_op)
+        dest = memref.AllocOp(ir.MemRefType.get(shape, memref_type.element_type), [], [])
+        copy_op = memref.CopyOp(input_node, dest)
+        arguments.append(dest)
     results = []
     for i, shape in enumerate(node.tensor_meta["shape"]):
         mlir_dtype = mlir_element_type_get(node.tensor_meta["dtype"][i])

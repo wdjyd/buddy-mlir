@@ -107,7 +107,6 @@ class Graph:
         inputs: List[TensorMeta],
         fake_params: List[TensorMeta],
         ops_registry: dict,
-        ops_gpu_registry: dict,
         func_name: str,
         device: DeviceType = DeviceType.CPU
     ) -> None:
@@ -131,7 +130,6 @@ class Graph:
         self.device = device
         self._imported_module = None
         self._ops_registry = ops_registry
-        self._ops_gpu_registry = ops_gpu_registry
         self._func_name = func_name
         self._ctx = ir.Context()
         self._output_memref = None
@@ -184,17 +182,17 @@ class Graph:
         #     self.op_groups[subgraph_name] = group
         group = []
         for i, op in enumerate(self._body):
-            if isinstance(op, PlaceholderOp) or isinstance(op, OutputOp) or i==18 or i==21 or i==24:
+            if isinstance(op, PlaceholderOp):
                 continue
             group.append(op)
         subgraph_name = "subgraph0"
         self.group_map_device[subgraph_name] = DeviceType.GPU
         self.op_groups[subgraph_name] = group
         
-        new_group = [self._body[18], self._body[21], self._body[24]]
-        subgraph_name = "subgraph1"
-        self.group_map_device[subgraph_name] = DeviceType.CPU
-        self.op_groups[subgraph_name] = new_group
+        # new_group = [self._body[18], self._body[21], self._body[24]]
+        # subgraph_name = "subgraph1"
+        # self.group_map_device[subgraph_name] = DeviceType.CPU
+        # self.op_groups[subgraph_name] = new_group
 
     def fuse_ops(self, pattern_list: List[FunctionType]):
         """
@@ -256,7 +254,6 @@ class Graph:
                 self._inputs,
                 self._func_name,
                 self._ops_registry,
-                self._ops_gpu_registry,
                 False,
                 self.device
             )
@@ -452,7 +449,6 @@ class GraphImporter:
         inputs: List[TensorMeta],
         func_name: str,
         ops_registry: dict,
-        ops_gpu_registry: dict,
         do_param_pack: bool = False,
         device: DeviceType = DeviceType.CPU,
     ):
@@ -478,7 +474,6 @@ class GraphImporter:
         self._num_input_visited = 0
         self._module = ir.Module.create()
         self._ops_registry = ops_registry
-        self._ops_gpu_registry = ops_gpu_registry
         self._current_param_pack_offset = None
 
     def _str_to_mlir_dtype(self, dtype: str) -> ir.Type:
@@ -570,11 +565,6 @@ class GraphImporter:
                             self._symbol_table.get((str(output_arg), 0))
                             for output_arg in output_node_args
                         ]
-                        if self._device == DeviceType.GPU:
-                            returns = [
-                                buffer.to_tensor(ret)
-                                for ret in returns
-                            ]
                         self._symbol_table[("output", 0)] = returns
                     elif isinstance(node, PlaceholderOp):
                         self._import_placeholder(node, args_list)
@@ -588,9 +578,6 @@ class GraphImporter:
                         self._import_op(node)
 
                 return self._symbol_table.get(("output", 0))
-        
-        if self._device == DeviceType.GPU:
-            self._module.operation.attributes["gpu.container_module"] = ir.UnitAttr.get()
 
         return self._module
 
@@ -691,16 +678,6 @@ class GraphImporter:
         else:
             placeholder_name = args_list[self._num_input_visited]
 
-        # TODO : Consider converting arg type from RankedTensorType to MemRefType
-        if self._device == DeviceType.GPU:
-            placeholder_name = buffer.to_memref(
-                ir.MemRefType.get(
-                    list(node.tensor_meta['shape']), 
-                    self._str_to_mlir_dtype(node.tensor_meta['dtype'])
-                ),
-                placeholder_name
-            )
-
         self._symbol_table[(str(node.name), 0)] = placeholder_name
         self._num_input_visited += 1
 
@@ -714,14 +691,9 @@ class GraphImporter:
         """
         
         op_name = node.__class__.__name__
-        if self._device == DeviceType.CPU:
-            op_ret: ir.Operation | ir.Value | tuple | List | ir.OpResult = (
-                self._ops_registry[op_name](node, self._symbol_table)
-            )
-        else:
-            op_ret: ir.Operation | ir.Value | tuple | List | ir.OpResult = (
-                self._ops_gpu_registry[op_name](node, self._symbol_table)
-            )
+        op_ret: ir.Operation | ir.Value | tuple | List | ir.OpResult = (
+            self._ops_registry[op_name](node, self._symbol_table)
+        )
         if isinstance(op_ret, tuple | List):
             for i, operation in enumerate(op_ret):
                 if isinstance(operation, ir.Operation) or isinstance(

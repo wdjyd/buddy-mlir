@@ -152,8 +152,7 @@ class GraphDriver:
             subgraph = Graph(
                 subgraph_input,
                 [], 
-                self._graph._ops_registry, 
-                self._graph._ops_gpu_registry,
+                self._graph._ops_registry,
                 subgraph_name,
                 subgraph_device
             )
@@ -216,7 +215,6 @@ class GraphDriver:
             self._graph._inputs,
             self._graph._fake_params,
             self._graph._ops_registry,
-            self._graph._ops_gpu_registry,
             self._graph._func_name,
         )
 
@@ -296,7 +294,6 @@ class GraphDriver:
                 main_graph._inputs,
                 main_graph._func_name,
                 main_graph._ops_registry,
-                main_graph._ops_gpu_registry,
                 do_param_pack,
             )
             return main_importer.import_main_graph()

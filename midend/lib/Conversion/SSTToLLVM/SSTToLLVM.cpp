@@ -169,8 +169,8 @@ protected:
        llvmPointerType /* intptr_t* aligned */,
        llvmIntPtrType /* intptr_t offset */,
        llvmIntPtrType /* intptr_t sizes of 0 */,
-       llvmIntPtrType /* intptr_t strides of 0 */,
        llvmIntPtrType /* intptr_t sizes of 1 */,
+       llvmIntPtrType /* intptr_t strides of 0 */,
        llvmIntPtrType /* intptr_t strides of 1 */,
        llvmInt64Type /* uint64_t offset */
        }};
@@ -181,10 +181,10 @@ protected:
        llvmPointerType /* intptr_t* aligned */,
        llvmIntPtrType /* intptr_t offset */,
        llvmIntPtrType /* intptr_t sizes of 0 */,
-       llvmIntPtrType /* intptr_t strides of 0 */,
        llvmIntPtrType /* intptr_t sizes of 1 */,
-       llvmIntPtrType /* intptr_t strides of 1 */,
        llvmIntPtrType /* intptr_t sizes of 2 */,
+       llvmIntPtrType /* intptr_t strides of 0 */,
+       llvmIntPtrType /* intptr_t strides of 1 */,
        llvmIntPtrType /* intptr_t strides of 2 */,
        llvmInt64Type /* uint64_t offset */
        }};
@@ -195,12 +195,12 @@ protected:
        llvmPointerType /* intptr_t* aligned */,
        llvmIntPtrType /* intptr_t offset */,
        llvmIntPtrType /* intptr_t sizes of 0 */,
-       llvmIntPtrType /* intptr_t strides of 0 */,
        llvmIntPtrType /* intptr_t sizes of 1 */,
-       llvmIntPtrType /* intptr_t strides of 1 */,
        llvmIntPtrType /* intptr_t sizes of 2 */,
-       llvmIntPtrType /* intptr_t strides of 2 */,
        llvmIntPtrType /* intptr_t sizes of 3 */,
+       llvmIntPtrType /* intptr_t strides of 0 */,
+       llvmIntPtrType /* intptr_t strides of 1 */,
+       llvmIntPtrType /* intptr_t strides of 2 */,
        llvmIntPtrType /* intptr_t strides of 3 */,
        llvmInt64Type /* uint64_t offset */
        }};

@@ -71,10 +71,14 @@ void registerLowerLinalgToGemminiPass();
 void registerDeviceSchedulePass();
 void registerLowerSchePass();
 void registerFuncBufferizeDynamicOffsetPass();
+void registerConvertMemcpyToGPUPass();
+void registerConvertMemcpyToSSTPass();
+// void registerLegalizeShmemOutliningPass();
 } // namespace buddy
 } // namespace mlir
 void registerLowerSSTToLLVMPass();
 void registerConvertGPUToSSTPass();
+void registerConvertMaximumfToMaxnumfPass();
 
 int main(int argc, char **argv) {
   // Register all MLIR passes.
@@ -104,10 +108,18 @@ int main(int argc, char **argv) {
   mlir::buddy::registerDeviceSchedulePass();
   mlir::buddy::registerLowerSchePass();
   mlir::buddy::registerFuncBufferizeDynamicOffsetPass();
-  
+
+  // Register gpu passes
+  mlir::buddy::registerConvertMemcpyToGPUPass();
+  // mlir::buddy::registerLegalizeShmemOutliningPass();
+
   // Register SST .
   registerLowerSSTToLLVMPass();
   registerConvertGPUToSSTPass();
+  mlir::buddy::registerConvertMemcpyToSSTPass();
+
+  // Register Arith .
+  registerConvertMaximumfToMaxnumfPass();
 
   mlir::DialectRegistry registry;
   // Register all MLIR core dialects.
