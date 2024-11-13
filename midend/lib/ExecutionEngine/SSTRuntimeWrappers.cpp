@@ -63,27 +63,29 @@ void sstSetupIntArgument(uint64_t integer, uint64_t offset){
 
 extern "C"
 void sstSetupInt8Argument(uint8_t integer, uint64_t offset){
-  cudaSetupArgument((void *) integer, 8, offset);
+  cudaSetupArgument((void *) integer, 1, offset);
 }
 
 extern "C"
 void sstSetupInt32Argument(uint32_t integer, uint64_t offset){
-  cudaSetupArgument((void *) integer, 8, offset);
+  cudaSetupArgument((void *) integer, 4, offset);
   // printf("----------------  int data is %d   ------------------\n", integer);
 }
 
 extern "C"
-void sstSetupFloat32Argument(void* data, uint64_t offset){
-  // float f = static_cast<float>(data);
-  // void* b = &f;
-  // int* c = (int*)b;
-  // int d = *c;
-  // void* e = (int*) d;
-  // printf("----------------  float data is %p   ------------------\n", data);
-  int e = 0x4048f5c3;
-  int*a = (int*)e;
+void sstSetupFloat32Argument(float data, uint64_t offset){
+  float f = static_cast<float>(data);
+  void* b = &f;
+  int* c = (int*)b;
+  int d = *c;
+  void* e = (int*) d;
+  printf("----------------  float data is %p   ------------------\n", e);
+  // int e = 0x4048f5c3;
+  // int*a = (int*)e;
+  // printf("----------------  float data is %lf   ------------------\n", f);
+  // printf("----------------  size of data is %d   ------------------\n", sizeof(data));
 
-  cudaSetupArgument((void *) a, 8, offset);
+  cudaSetupArgument(e, 4, offset);
 }
 
 extern "C"

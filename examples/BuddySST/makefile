@@ -24,7 +24,7 @@ MLIR_ASYNC_RUNTIME := ./../llvm/build/lib/libmlir_async_runtime.dylib
 MTRIPLE := x86_64-apple-darwin
 endif
 
-kernel.ptx: forward.mlir
+kernel.ptx: outlining.mlir
 	@${BUDDY_OPT} $< -lower-affine -gpu-kernel-outlining -gpu-async-region | \
 	${MLIR_OPT} -pass-pipeline "builtin.module(gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-nvvm-to-llvm,convert-arith-to-llvm, gpu-to-cubin{chip=sm_30 features=+ptx32}))" | \
 	${MLIR_OPT} > /dev/null 
@@ -34,7 +34,7 @@ kernel-outlining:
 	${MLIR_OPT} -o outlining.mlir
 
 gpu-to-sst:	
-	@${BUDDY_OPT} --allow-unregistered-dialect  outlining.mlir -convert-gpu-to-sst -o sst_copy.mlir
+	@${BUDDY_OPT} --allow-unregistered-dialect  outlining.mlir -convert-gpu-to-sst -o sst.mlir
 
 sst-lower:
 	@${BUDDY_OPT} sst.mlir -llvm-request-c-wrappers --gpu-to-llvm -lower-sst-to-llvm -expand-strided-metadata -finalize-memref-to-llvm  -reconcile-unrealized-casts -o log.mlir
@@ -46,6 +46,38 @@ sst-translate:
 sst-run:
 	@${BUDDY_OPT} log.mlir | \
 	${MLIR_CPU_RUNNER} -entry-point-result=void -shared-libs=${MLIR_RUNNER_UTILS} -shared-libs=${MLIR_C_RUNNER_UTILS} -shared-libs=${MLIR_CUDA_RUNTIME} -shared-libs=${WAFER_SST_RUNTIME}
+
+
+forward-translate:
+	@${MLIR_OPT} ./forward.mlir \
+		-pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith), empty-tensor-to-alloc-tensor, convert-elementwise-to-linalg, arith-bufferize, func.func(linalg-bufferize, tensor-bufferize), func-bufferize)" | \
+	${MLIR_OPT} -pass-pipeline "builtin.module(func.func(buffer-deallocation-simplification, convert-linalg-to-loops), eliminate-empty-tensors, func.func(llvm-request-c-wrappers),convert-math-to-llvm, convert-math-to-libm, convert-scf-to-cf,  convert-arith-to-llvm, expand-strided-metadata, finalize-memref-to-llvm, convert-func-to-llvm, reconcile-unrealized-casts)" | \
+	${MLIR_TRANSLATE} -mlir-to-llvmir -o forward.ll
+
+subgraph0-lower:
+	@${BUDDY_OPT} ./subgraph0.mlir \
+	-pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" | \
+	${BUDDY_OPT} \
+	-one-shot-bufferize="bufferize-function-boundaries=1 function-boundary-type-conversion=identity-layout-map" -convert-linalg-to-parallel-loops -canonicalize -gpu-map-parallel-loops -convert-parallel-loops-to-gpu -gpu-kernel-outlining -canonicalize -cse -convert-maximumf-to-maxnumf -convert-memcpy-to-sst -convert-gpu-to-sst -o log.mlir
+
+subgraph0-translate:
+	@${BUDDY_OPT} ./subgraph0.mlir \
+	-pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" | \
+	${BUDDY_OPT} -one-shot-bufferize="bufferize-function-boundaries=1 function-boundary-type-conversion=identity-layout-map" -convert-linalg-to-parallel-loops -canonicalize -gpu-map-parallel-loops -convert-parallel-loops-to-gpu -gpu-kernel-outlining -canonicalize -cse -convert-maximumf-to-maxnumf -convert-memcpy-to-sst -convert-gpu-to-sst | \
+	${BUDDY_OPT} -llvm-request-c-wrappers --gpu-to-llvm -lower-sst-to-llvm -expand-strided-metadata -finalize-memref-to-llvm  -reconcile-unrealized-casts | \
+	${MLIR_TRANSLATE} -mlir-to-llvmir -o subgraph0.ll
+
+forward-translate:
+
+
+subgraph0-kernel.ptx:
+	@${BUDDY_OPT} ./subgraph0.mlir \
+	-pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" | \
+	${BUDDY_OPT} \
+	-one-shot-bufferize="bufferize-function-boundaries=1 function-boundary-type-conversion=identity-layout-map" -convert-linalg-to-parallel-loops -canonicalize -gpu-map-parallel-loops -convert-parallel-loops-to-gpu -gpu-kernel-outlining -canonicalize -cse -convert-maximumf-to-maxnumf -convert-memcpy-to-gpu | \
+	${BUDDY_OPT} -lower-affine -gpu-kernel-outlining -gpu-async-region | \
+	${MLIR_OPT} -pass-pipeline "builtin.module(gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-nvvm-to-llvm,convert-arith-to-llvm, gpu-to-cubin{chip=sm_30 features=+ptx32}))" | \
+	${MLIR_OPT} > /dev/null 
 
 gpu-test-lower:
 	@${MLIR_OPT} forward.mlir -gpu-kernel-outlining -gpu-async-region | \
@@ -80,14 +112,17 @@ gpu_sha1.out:
 	g++ -m64 -o gpu_sha1.out -Wl,--start-group "dlink.o" "main.o"   "-L/usr/local/cuda/bin/../targets/x86_64-linux/lib/stubs" "-L/usr/local/cuda/bin/../targets/x86_64-linux/lib" -lcudadevrt  -L/usr/local/cuda/lib64 -lcudart  -lrt -lpthread  -ldl  -Wl,--end-group
 	rm main.cpp1.ii main.cpp4.ii main.cudafe1.c main.cudafe1.cpp main.cudafe1.gpu main.cudafe1.stub.c main.fatbin.c main.module_id main.o dlink.fatbin.c dlink.o dlink.reg.c
 
-host_ctrl.o: log.ll gpu_sha1.out
+forward.o: forward.ll gpu_sha1.out
 	$(LLC) -mtriple=x86_64-unknown-linux-gnu $< --filetype=obj -o $@
 
-example.o: sst-main-copy.cpp
-	$(CLANG)  -c $< -I/home/newdisk/kt/buddy-mlir/frontend/Interfaces -o $@
+subgraph0.o: subgraph0.ll
+	$(LLC) -mtriple=x86_64-unknown-linux-gnu $< --filetype=obj -o $@
 
-sha1_host: example.o host_ctrl.o
-	$(CLANG) example.o host_ctrl.o -L/home/newdisk/kt/buddy-mlir/llvm/build/lib -lmlir_c_runner_utils \
+example.o: buddy-lenet-main.cpp
+	$(CLANG)  -c $< -I/home/newdisk/kt/buddy-mlir/frontend/Interfaces -I/home/newdisk/kt/opencv-4.9.0/include -o $@
+
+sha1_host: example.o forward.o subgraph0.o
+	$(CLANG) example.o forward.o subgraph0.o -L/home/newdisk/kt/buddy-mlir/llvm/build/lib -lmlir_c_runner_utils \
 		        -L/home/newdisk/kt/buddy-mlir/build/lib -lwafer_sst_runtime \
 				-Wl,-rpath,/home/newdisk/kt/buddy-mlir/llvm/build/lib:/home/newdisk/kt/buddy-mlir/build/lib \
 				-o kt_run_exe

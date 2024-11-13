@@ -174,25 +174,26 @@ class Graph:
         - None
         """
         # for i, op in enumerate(self._body):
-        #     if isinstance(op, PlaceholderOp) or isinstance(op, OutputOp):
+        #     if isinstance(op, PlaceholderOp) or isinstance(op, OutputOp) or i == 18 or i == 21 or i == 24:
         #         continue
         #     group = [op]
         #     subgraph_name = "subgraph{}".format(i)
         #     self.group_map_device[subgraph_name] = DeviceType.GPU
         #     self.op_groups[subgraph_name] = group
+            
         group = []
         for i, op in enumerate(self._body):
-            if isinstance(op, PlaceholderOp):
+            if isinstance(op, PlaceholderOp) or i == 18 or i == 21 or i == 24:
                 continue
             group.append(op)
         subgraph_name = "subgraph0"
         self.group_map_device[subgraph_name] = DeviceType.GPU
         self.op_groups[subgraph_name] = group
         
-        # new_group = [self._body[18], self._body[21], self._body[24]]
-        # subgraph_name = "subgraph1"
-        # self.group_map_device[subgraph_name] = DeviceType.CPU
-        # self.op_groups[subgraph_name] = new_group
+        new_group = [self._body[18], self._body[21], self._body[24]]
+        subgraph_name = "subgraph1"
+        self.group_map_device[subgraph_name] = DeviceType.CPU
+        self.op_groups[subgraph_name] = new_group
 
     def fuse_ops(self, pattern_list: List[FunctionType]):
         """

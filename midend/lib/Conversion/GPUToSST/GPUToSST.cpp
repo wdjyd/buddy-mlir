@@ -31,10 +31,16 @@ using namespace mlir;
 
 namespace {
 
+int align_address(int address, int alignment) {
+  return ((address + alignment - 1) / alignment) * alignment;
+}
+
 class ConvertingGPULaunchFuncToSST : public OpRewritePattern<gpu::LaunchFuncOp> {
 public:
   using OpRewritePattern<gpu::LaunchFuncOp>::OpRewritePattern;
   
+
+
   LogicalResult matchAndRewrite(gpu::LaunchFuncOp op,
                                 PatternRewriter &rewriter) const override {
     auto loc = op.getLoc();
@@ -71,14 +77,21 @@ public:
     int arg_offset = 0;
     for (auto it = kernelOperands.begin(); it != kernelOperands.end(); ++it) {
       Value arg = *it;                
-      auto argType = arg.getType();
-      Value offset = rewriter.create<arith::ConstantIndexOp>(loc, arg_offset);
-      rewriter.create<sst::SetupArgumentOp>(loc, /*arg=*/arg, /*arg_offset=*/offset);   
+      auto argType = arg.getType(); 
       if (argType == rewriter.getIndexType() || argType == rewriter.getI64Type() || argType == rewriter.getI32Type()) {     // int type
+          arg_offset = align_address(arg_offset, 8);
+          Value offset = rewriter.create<arith::ConstantIndexOp>(loc, arg_offset);
+          rewriter.create<sst::SetupArgumentOp>(loc, /*arg=*/arg, /*arg_offset=*/offset);  
           arg_offset += 8;
-      } else if (argType == rewriter.getF32Type()) {
-          arg_offset += 8;
+      } else if (argType == rewriter.getI32Type() || argType == rewriter.getF32Type()) {
+          arg_offset = align_address(arg_offset, 4);
+          Value offset = rewriter.create<arith::ConstantIndexOp>(loc, arg_offset);
+          rewriter.create<sst::SetupArgumentOp>(loc, /*arg=*/arg, /*arg_offset=*/offset);  
+          arg_offset += 4;
       } else if (argType.isa<MemRefType>()) {   // memref type
+          arg_offset = align_address(arg_offset, 8);
+          Value offset = rewriter.create<arith::ConstantIndexOp>(loc, arg_offset);
+          rewriter.create<sst::SetupArgumentOp>(loc, /*arg=*/arg, /*arg_offset=*/offset);  
           arg_offset += 8 * (3 + 2 * (argType.dyn_cast<MemRefType>()).getShape().size());
       } else {
           return failure();

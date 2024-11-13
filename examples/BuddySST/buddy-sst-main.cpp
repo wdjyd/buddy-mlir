@@ -26,11 +26,11 @@
 #include <utility>
 #include <vector>
 
-constexpr size_t ParamsSize = 156;
+constexpr size_t ParamsSize = 44426;
 const std::string ImgName = "3.png";
 
 /// Declare LeNet forward function.
-extern "C" void _mlir_ciface_forward(MemRef<float, 4> *output,
+extern "C" void _mlir_ciface_forward(MemRef<float, 2> *output,
                                      MemRef<float, 1> *arg0,
                                      Img<float, 4> *input);
 
@@ -117,11 +117,11 @@ int main() {
 
   // Define the sizes of the input and output tensors.
   intptr_t sizesInput[4] = {1, 1, 28, 28};
-  intptr_t sizesOutput[4] = {1, 6, 12, 12};
+  intptr_t sizesOutput[2] = {1, 10};
 
   // Create input and output containers for the image and model output.
   Img<float, 4> input(image, sizesInput, true);
-  MemRef<float, 4> output(sizesOutput);
+  MemRef<float, 2> output(sizesOutput);
 
   // Load model parameters from the specified file.
   std::string lenetDir = getenv("LENET_EXAMPLE_PATH");
@@ -134,29 +134,29 @@ int main() {
 
   // Apply softmax to the output logits to get probabilities.
   auto out = output.getData();
-  for (int j = 0; j < 12; j++) {
-    std::cout << "[ ";
-    for (int i = 0; i < 12; ++i) {
-      // out0[j*8+i] = i;
-      printf("%f ", out[j*12+i]);
-    }
-    std::cout << "]" << std::endl;
-  }
-
-  // softmax(out, 10);
-
-  // // Find the classification and print the result.
-  // float maxVal = 0;
-  // float maxIdx = 0;
-  // for (int i = 0; i < 10; ++i) {
-  //   if (out[i] > maxVal) {
-  //     maxVal = out[i];
-  //     maxIdx = i;
+  // for (int j = 0; j < 12; j++) {
+  //   std::cout << "[ ";
+  //   for (int i = 0; i < 12; ++i) {
+  //     // out0[j*8+i] = i;
+  //     printf("%f ", out[j*12+i]);
   //   }
+  //   std::cout << "]" << std::endl;
   // }
 
-  // std::cout << "Classification: " << maxIdx << std::endl;
-  // std::cout << "Probability: " << maxVal << std::endl;
+  softmax(out, 10);
+
+  // Find the classification and print the result.
+  float maxVal = 0;
+  float maxIdx = 0;
+  for (int i = 0; i < 10; ++i) {
+    if (out[i] > maxVal) {
+      maxVal = out[i];
+      maxIdx = i;
+    }
+  }
+
+  std::cout << "Classification: " << maxIdx << std::endl;
+  std::cout << "Probability: " << maxVal << std::endl;
 
   return 0;
 }
