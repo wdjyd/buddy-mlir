@@ -71,12 +71,12 @@ with open(os.path.join(path_prefix, "lenet.json"), "w") as module_file:
 graph0 = json_to_graph(json_str)
 driver = GraphDriver(graph)
 driver.subgraphs[0].lower_to_top_level_ir()
-# driver.subgraphs[1].lower_to_top_level_ir()
+driver.subgraphs[1].lower_to_top_level_ir()
 
 with open(os.path.join(path_prefix, "subgraph0.mlir"), "w") as module_file:
     print(driver.subgraphs[0]._imported_module, file=module_file)
-# with open(os.path.join(path_prefix, "subgraph1.mlir"), "w") as module_file:
-#     print(driver.subgraphs[1]._imported_module, file=module_file)
+with open(os.path.join(path_prefix, "subgraph1.mlir"), "w") as module_file:
+    print(driver.subgraphs[1]._imported_module, file=module_file)
 with open(os.path.join(path_prefix, "forward.mlir"), "w") as module_file:
     print(driver.construct_main_graph(True), file=module_file)
 

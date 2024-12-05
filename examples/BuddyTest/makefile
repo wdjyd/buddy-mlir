@@ -35,18 +35,19 @@ kernel-outlining:
 	${MLIR_OPT} -o tmp.mlir
 
 gpu-test-lower:
-	@${BUDDY_OPT} forward.mlir -gpu-kernel-outlining -convert-vector-to-scf -convert-vector-to-llvm -func-bufferize-dynamic-offset -tensor-bufferize -buffer-deallocation -finalizing-bufferize -expand-strided-metadata  -one-shot-bufferize  | \
-	${MLIR_OPT} -pass-pipeline "builtin.module(gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-nvvm-to-llvm,convert-arith-to-llvm, gpu-to-cubin{chip=sm_70 features=+ptx32}), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts)" | \
+	@${MLIR_OPT} forward.mlir -gpu-kernel-outlining -gpu-async-region -llvm-request-c-wrappers -convert-vector-to-scf -convert-vector-to-llvm | \
+	${MLIR_OPT} -pass-pipeline="builtin.module(nvvm-attach-target{chip=sm_70 O=3},\
+	gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-arith-to-llvm), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts, gpu-module-to-binary)" | \
 	${MLIR_OPT} -o log.mlir
 
 gpu-test-translate:
-	@${MLIR_OPT} forward.mlir -gpu-kernel-outlining -llvm-request-c-wrappers -convert-vector-to-scf -convert-vector-to-llvm | \
+	@${MLIR_OPT} forward.mlir -gpu-kernel-outlining -gpu-async-region -llvm-request-c-wrappers -convert-vector-to-scf -convert-vector-to-llvm | \
 	${MLIR_OPT} -pass-pipeline="builtin.module(nvvm-attach-target{chip=sm_70 O=3},\
 	gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-arith-to-llvm), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts, gpu-module-to-binary)" | \
 	${MLIR_TRANSLATE} -mlir-to-llvmir -o log.ll
 
 gpu-test-run:
-	@${MLIR_OPT} forward.mlir -gpu-kernel-outlining -llvm-request-c-wrappers -convert-vector-to-scf -convert-vector-to-llvm | \
+	@${MLIR_OPT} forward.mlir -gpu-kernel-outlining -gpu-async-region -llvm-request-c-wrappers -convert-vector-to-scf -convert-vector-to-llvm | \
 	${MLIR_OPT} -pass-pipeline="builtin.module(nvvm-attach-target{chip=sm_70 O=3},\
 	gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-arith-to-llvm), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts, gpu-module-to-binary)" | \
 	${MLIR_CPU_RUNNER} -entry-point-result=void -shared-libs=${MLIR_RUNNER_UTILS} -shared-libs=${MLIR_CUDA_RUNTIME} 

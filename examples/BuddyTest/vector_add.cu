@@ -14,16 +14,16 @@ int main() {
     int b[] = {5, 4, 3, 2, 1};
     int result[n];
     // 在GPU上分配内存
-    sstCudaMalloc((void**)&d_a, n * sizeof(int));
-    sstCudaMalloc((void**)&d_b, n * sizeof(int));
-    sstCudaMalloc((void**)&d_result, n * sizeof(int));
+    cudaMalloc((void**)&d_a, n * sizeof(int));
+    cudaMalloc((void**)&d_b, n * sizeof(int));
+    cudaMalloc((void**)&d_result, n * sizeof(int));
     // 将数据从主机复制到设备
-    sstCudaMemcpy(d_a, a, n * sizeof(int), cudaMemcpyHostToDevice);
-    sstCudaMemcpy(d_b, b, n * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_a, a, n * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b, b, n * sizeof(int), cudaMemcpyHostToDevice);
     // 调用内核函数执行向量加法
     vector_addition_gpu<<<1, n>>>(d_a, d_b, d_result, n);
     // 将计算结果从设备复制回主机
-    sstCudaMemcpy(result, d_result, n * sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(result, d_result, n * sizeof(int), cudaMemcpyDeviceToHost);
     // 释放内存
     // cudaFree(d_a);
     // cudaFree(d_b);

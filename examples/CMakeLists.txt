@@ -24,6 +24,10 @@ if (BUDDY_SST_EXAMPLES)
   add_subdirectory(BuddySST)
 endif()
 
+if (BUDDY_SOW_EXAMPLES)
+  add_subdirectory(BuddySow)
+endif()
+
 if (BUDDY_MOBILENETV3_EXAMPLES)
   add_subdirectory(BuddyMobileNetV3)
 endif()

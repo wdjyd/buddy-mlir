@@ -3,13 +3,13 @@
 #include <cstdint>
 
 extern "C"
-unsigned int __sstcudaRegisterFatBinary() {
+unsigned int __sstcudaRegisterFatBinary(uint64_t fatbin) {
   const char* work_dir = getenv("WAFER_WORKSPACE");
   char file_name[256];
   if (work_dir != NULL) {
-    snprintf(file_name, sizeof(file_name), "%s/buddy_gpu.out", work_dir);
+    snprintf(file_name, sizeof(file_name), "%s/buddy_gpu_%d.out", work_dir, fatbin);
   } else {
-    snprintf(file_name, sizeof(file_name), "./buddy_gpu.out");
+    snprintf(file_name, sizeof(file_name), "./buddy_gpu_%d.out", fatbin);
   }
   printf("%s", file_name);
   unsigned int fatbin_handle = __cudaRegisterFatBinary(file_name);

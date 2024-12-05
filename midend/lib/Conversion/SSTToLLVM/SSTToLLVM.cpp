@@ -101,7 +101,7 @@ protected:
   FunctionCallBuilder RegisterFatBinCallBuilder = {
       "__sstcudaRegisterFatBinary",
       llvmIntPtrType /* unsigned int fatbin_handle */,
-      {}};
+      {llvmIntPtrType /* unsigned int fatbin_file */,}};
   FunctionCallBuilder RegisterFuncCallBuilder = {
       "__sstcudaRegisterFunction",
       llvmVoidType,
@@ -413,7 +413,7 @@ LogicalResult ConvertRegisterFatbinOpToSSTCallPattern::matchAndRewrite(
   //   return failure();
 
   Location loc = registerFatbinOp.getLoc();
-  Value Fatbin = RegisterFatBinCallBuilder.create(loc, rewriter, {}).getResult();
+  Value Fatbin = RegisterFatBinCallBuilder.create(loc, rewriter, {adaptor.getFatbin()}).getResult();
 
   rewriter.replaceOp(registerFatbinOp, Fatbin);
   return success();

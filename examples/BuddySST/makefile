@@ -41,7 +41,7 @@ sst-lower:
 
 sst-translate:
 	@${BUDDY_OPT} sst.mlir -llvm-request-c-wrappers --gpu-to-llvm -lower-sst-to-llvm -expand-strided-metadata -finalize-memref-to-llvm  -reconcile-unrealized-casts | \
-	${MLIR_TRANSLATE} -mlir-to-llvmir -o log.ll
+	${MLIR_TRANSLATE} -mlir-to-llvmir -o forward.ll
 
 sst-run:
 	@${BUDDY_OPT} log.mlir | \
@@ -118,11 +118,26 @@ forward.o: forward.ll gpu_sha1.out
 subgraph0.o: subgraph0.ll
 	$(LLC) -mtriple=x86_64-unknown-linux-gnu $< --filetype=obj -o $@
 
-example.o: buddy-lenet-main.cpp
+example.o: sst-main-copy.cpp
 	$(CLANG)  -c $< -I/home/newdisk/kt/buddy-mlir/frontend/Interfaces -I/home/newdisk/kt/opencv-4.9.0/include -o $@
 
-sha1_host: example.o forward.o subgraph0.o
-	$(CLANG) example.o forward.o subgraph0.o -L/home/newdisk/kt/buddy-mlir/llvm/build/lib -lmlir_c_runner_utils \
+sha1_host: example.o forward.o 
+	$(CLANG) example.o forward.o -L/home/newdisk/kt/buddy-mlir/llvm/build/lib -lmlir_c_runner_utils \
 		        -L/home/newdisk/kt/buddy-mlir/build/lib -lwafer_sst_runtime \
 				-Wl,-rpath,/home/newdisk/kt/buddy-mlir/llvm/build/lib:/home/newdisk/kt/buddy-mlir/build/lib \
 				-o kt_run_exe
+
+vector-out: forward.mlir
+	@${MLIR_OPT} $< -gpu-kernel-outlining -gpu-async-region | \
+	${MLIR_OPT} -pass-pipeline "builtin.module(gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-nvvm-to-llvm,convert-arith-to-llvm, convert-vector-to-llvm, reconcile-unrealized-casts, gpu-to-cubin{chip=sm_70 features=+ptx32}))" -o log.mlir
+
+gpu-vector-run:
+	@${MLIR_OPT} forward.mlir -gpu-kernel-outlining -llvm-request-c-wrappers -convert-vector-to-scf -convert-vector-to-llvm | \
+	${MLIR_OPT} -pass-pipeline="builtin.module(nvvm-attach-target{chip=sm_70 O=3},\
+	gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-arith-to-llvm), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts, gpu-module-to-binary)" | \
+	${MLIR_CPU_RUNNER} -entry-point-result=void -shared-libs=${MLIR_RUNNER_UTILS} -shared-libs=${MLIR_CUDA_RUNTIME}
+
+vector-x86: 
+	@${MLIR_OPT} forward.mlir -llvm-request-c-wrappers -convert-vector-to-scf -convert-vector-to-llvm | \
+	${MLIR_OPT} -pass-pipeline="builtin.module(convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts)" | \
+	${MLIR_TRANSLATE} -mlir-to-llvmir -o log.ll

@@ -1,5 +1,5 @@
 module attributes {gpu.container_module} {
-  func.func @forward(%arg0: memref<4x32xf32>, %arg1: memref<4x32xf32>) {
+  func.func @forward(%arg0: memref<4x32xf32>) {
     %c0 = arith.constant 0 : index
     %c1 = arith.constant 1 : index
     %c4 = arith.constant 4 : index
@@ -7,23 +7,25 @@ module attributes {gpu.container_module} {
     %cst = arith.constant 3.140000e+00 : f32
     %cst_0 = arith.constant 6.500000e+00 : f32
     %memref = "sst.malloc"() : () -> memref<4x32xf32>
-    %c0_2 = arith.constant 0 : index
+    %c0_1 = arith.constant 0 : index
+    %c1_2 = arith.constant 1 : index
     %c1_3 = arith.constant 1 : index
-    %0 = "sst.reg_fatbin"() : () -> index
-    "sst.reg_func"(%0, %c1_3) : (index, index) -> ()
-    "sst.config_call"(%c32, %c1, %c1, %c4, %c1, %c1, %c0_2) : (index, index, index, index, index, index, index) -> ()
+    %0 = "sst.reg_fatbin"(%c0) : (index) -> index
+    "sst.reg_func"(%0, %c1_2) : (index, index) -> ()
+    "sst.config_call"(%c32, %c1, %c1, %c4, %c1, %c1, %c0_1) : (index, index, index, index, index, index, index) -> ()
     %c0_4 = arith.constant 0 : index
     "sst.setup_arg"(%cst, %c0_4) : (f32, index) -> ()
     %c8 = arith.constant 8 : index
     "sst.setup_arg"(%memref, %c8) : (memref<4x32xf32>, index) -> ()
-    "sst.launch"(%c1_3) : (index) -> ()
+    "sst.launch"(%c1_2) : (index) -> ()
     %c0_5 = arith.constant 0 : index
     %c2 = arith.constant 2 : index
-    %1 = "sst.reg_fatbin"() : () -> index
+    %c1_6 = arith.constant 1 : index
+    %1 = "sst.reg_fatbin"(%c1_6) : (index) -> index
     "sst.reg_func"(%1, %c2) : (index, index) -> ()
     "sst.config_call"(%c32, %c1, %c1, %c4, %c1, %c1, %c0_5) : (index, index, index, index, index, index, index) -> ()
-    %c0_6 = arith.constant 0 : index
-    "sst.setup_arg"(%memref, %c0_6) : (memref<4x32xf32>, index) -> ()
+    %c0_7 = arith.constant 0 : index
+    "sst.setup_arg"(%memref, %c0_7) : (memref<4x32xf32>, index) -> ()
     %c56 = arith.constant 56 : index
     "sst.setup_arg"(%cst_0, %c56) : (f32, index) -> ()
     %c60 = arith.constant 60 : index

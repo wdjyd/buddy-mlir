@@ -1,5 +1,5 @@
 module attributes {gpu.container_module} {
-  func.func @forward(%arg0: memref<4x32xf32>, %arg1: memref<4x32xf32>) {
+  func.func @subgraph1(%arg0: memref<4x32xf32>) {
     %c0 = arith.constant 0 : index
     %c1 = arith.constant 1 : index
     %c4 = arith.constant 4 : index
@@ -7,11 +7,9 @@ module attributes {gpu.container_module} {
     %cst = arith.constant 3.140000e+00 : f32
     %cst_0 = arith.constant 6.500000e+00 : f32
     %memref = gpu.alloc  () : memref<4x32xf32>
-    %memref_1 = gpu.alloc  () : memref<4x32xf32>
     gpu.launch_func  @CUDA_kernel_1::@CUDA_kernel_1 blocks in (%c4, %c1, %c1) threads in (%c32, %c1, %c1)  args(%cst : f32, %memref : memref<4x32xf32>)
     gpu.launch_func  @CUDA_kernel_2::@CUDA_kernel_2 blocks in (%c4, %c1, %c1) threads in (%c32, %c1, %c1)  args(%memref : memref<4x32xf32>, %cst_0 : f32, %cst : f32, %c0 : index)
     gpu.memcpy  %arg0, %memref : memref<4x32xf32>, memref<4x32xf32>
-    gpu.memcpy  %arg1, %memref_1 : memref<4x32xf32>, memref<4x32xf32>
     return
   }
   gpu.module @CUDA_kernel_1 {

@@ -1,0 +1,13 @@
+log.mlir
+log.ll
+log.s
+data
+*.data
+*.json
+*.dot
+__pycache__
+*.pth
+lenet.mlir
+forward.mlir
+subgraph0.mlir
+subgraph1.mlir

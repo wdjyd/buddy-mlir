@@ -145,6 +145,10 @@ class Graph:
     @body.setter
     def body(self, new_body):
         self._body = new_body
+        
+    @property
+    def name(self):
+        return self._func_name
 
     def add_node(self, node: Op):
         """
@@ -183,14 +187,18 @@ class Graph:
             
         group = []
         for i, op in enumerate(self._body):
-            if isinstance(op, PlaceholderOp) or i == 18 or i == 21 or i == 24:
+            if isinstance(op, PlaceholderOp) or (i != 11):
                 continue
             group.append(op)
         subgraph_name = "subgraph0"
         self.group_map_device[subgraph_name] = DeviceType.GPU
         self.op_groups[subgraph_name] = group
         
-        new_group = [self._body[18], self._body[21], self._body[24]]
+        new_group = []
+        for i, op in enumerate(self._body):
+            if isinstance(op, PlaceholderOp) or (i == 11):
+                continue
+            new_group.append(op)
         subgraph_name = "subgraph1"
         self.group_map_device[subgraph_name] = DeviceType.CPU
         self.op_groups[subgraph_name] = new_group
@@ -299,7 +307,7 @@ class Graph:
         """
         if self._imported_module is None:
             self.lower_to_top_level_ir()
-
+            
         with ir.Location.unknown(self._ctx):
             pm = PassManager("builtin.module")
             pm.add("func.func(tosa-to-linalg-named)")
