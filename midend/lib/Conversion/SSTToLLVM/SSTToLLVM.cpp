@@ -117,6 +117,10 @@ protected:
        llvmIntPtrType /* unsigned int gridY */,
        llvmIntPtrType /* unsigned int gridZ */,
        llvmIntPtrType /* uint64_t sharedMem */}};
+  FunctionCallBuilder SetDeviceBuilder = {
+      "sstcudaSetDevice",
+      llvmVoidType,
+      {llvmIntPtrType /* uint64_t device */}};
   FunctionCallBuilder LaunchCallBuilder = {
       "sstcudaLaunch",
       llvmVoidType,
@@ -274,6 +278,18 @@ private:
                   ConversionPatternRewriter &rewriter) const override;
 };
 
+class ConvertSetDeviceOpToSSTCallPattern
+    : public ConvertOpToSSTCallPattern<sst::SetDeviceOp> {
+public:
+  ConvertSetDeviceOpToSSTCallPattern(LLVMTypeConverter &typeConverter)
+      : ConvertOpToSSTCallPattern<sst::SetDeviceOp>(typeConverter) {}
+
+private:
+  LogicalResult
+  matchAndRewrite(sst::SetDeviceOp setDeviceOp, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override;
+};
+
 class ConvertMallocOpToSSTCallPattern
     : public ConvertOpToSSTCallPattern<sst::MallocOp> {
 public:
@@ -354,6 +370,7 @@ void populateSSTToLLVMPatterns(LLVMTypeConverter &converter,
                ConvertRegisterFuncOpToSSTCallPattern,
                ConvertConfigureCallOpToSSTCallPattern,
                ConvertLaunchOpToSSTCallPattern,
+               ConvertSetDeviceOpToSSTCallPattern,
                ConvertMallocOpToSSTCallPattern,
                ConvertMemcpyOpToSSTCallPattern,
                ConvertSetupArgumentOpToSSTCallPattern,
@@ -460,6 +477,20 @@ LogicalResult ConvertLaunchOpToSSTCallPattern::matchAndRewrite(
   LaunchCallBuilder.create(loc, rewriter, {adaptor.getFuncId()});
 
   rewriter.eraseOp(launchOp);
+  return success();
+}
+
+LogicalResult ConvertSetDeviceOpToSSTCallPattern::matchAndRewrite(
+    sst::SetDeviceOp setDeviceOp, OpAdaptor adaptor,
+    ConversionPatternRewriter &rewriter) const {
+  // if (failed(areAllLLVMTypes(registerFatbinOp, adaptor.getOperands(), rewriter)) ||
+  //     failed(isAsyncWithOneDependency(rewriter, registerFatbinOp)))
+  //   return failure();
+
+  Location loc = setDeviceOp.getLoc();
+  SetDeviceBuilder.create(loc, rewriter, {adaptor.getDeviceId()});
+
+  rewriter.eraseOp(setDeviceOp);
   return success();
 }
 

@@ -29,7 +29,7 @@ from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
 from buddy.compiler.graph.type import DeviceType
-from buddy.compiler.ops import tosa, gpu
+from buddy.compiler.ops import tosa
 from buddy.compiler.graph.json_decoder import json_to_graph
 from model import LeNet
 

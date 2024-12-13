@@ -73,6 +73,10 @@ def SST_LaunchOp : SST_Op <"launch", []> {
   let arguments = (ins Index : $funcId);
 }
 
+def SST_SetDeviceOp : SST_Op <"set_device", []> {
+  let arguments = (ins Index : $deviceId);
+}
+
 def SST_GetCpuIdOp : SST_Op <"get_cpuid", []> {
   let results = (outs Index : $cpuId);
 }

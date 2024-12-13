@@ -63,10 +63,10 @@ gpu-mma-lower:
 	${MLIR_OPT}	-convert-scf-to-cf -gpu-to-llvm -o log.mlir
 		
 gpu-mma-run:
-	@${MLIR_OPT} gpu-mma.mlir -gpu-kernel-outlining | \
-	${MLIR_OPT} -pass-pipeline='builtin.module(gpu.module(strip-debuginfo,convert-gpu-to-nvvm,gpu-to-cubin{chip=sm_70}))' | \
-	${MLIR_OPT}	-convert-scf-to-cf -gpu-to-llvm | \
-	${MLIR_CPU_RUNNER} -entry-point-result=void -shared-libs=${MLIR_CUDA_RUNTIME} -shared-libs=${MLIR_RUNNER_UTILS}
+	@${MLIR_OPT} gpu-mma.mlir -gpu-kernel-outlining -gpu-async-region -llvm-request-c-wrappers -convert-vector-to-scf -convert-vector-to-llvm | \
+	${MLIR_OPT} -pass-pipeline="builtin.module(nvvm-attach-target{chip=sm_70 O=3},\
+	gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-arith-to-llvm), convert-scf-to-cf, gpu-to-llvm, reconcile-unrealized-casts, gpu-module-to-binary)" | \
+	${MLIR_CPU_RUNNER} -entry-point-result=void -shared-libs=${MLIR_RUNNER_UTILS} -shared-libs=${MLIR_CUDA_RUNTIME} 
 
 vector-to-gpu-lower:
 	@${MLIR_OPT} vector-to-gpu.mlir -convert-linalg-to-loops | \

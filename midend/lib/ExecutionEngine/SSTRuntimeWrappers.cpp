@@ -39,6 +39,11 @@ void sstcudaLaunch(uint64_t func){
 }
 
 extern "C"
+void sstcudaSetDevice(uint64_t device) {
+  cudaSetDevice(static_cast<int>(device));
+}
+
+extern "C"
 void* sstcudaMalloc(size_t size){
   void *data;
   cudaMalloc((void**)&data, size * sizeof(unsigned char));
