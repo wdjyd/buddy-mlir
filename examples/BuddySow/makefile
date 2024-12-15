@@ -79,6 +79,15 @@ subgraph0-kernel.ptx:
 	${MLIR_OPT} -pass-pipeline "builtin.module(gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-nvvm-to-llvm,convert-arith-to-llvm, gpu-to-cubin{chip=sm_30 features=+ptx32}))" | \
 	${MLIR_OPT} > /dev/null 
 
+subgraph1-kernel.ptx:
+	@${BUDDY_OPT} ./subgraph1.mlir \
+	-pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" | \
+	${BUDDY_OPT} \
+	-one-shot-bufferize="bufferize-function-boundaries=1 function-boundary-type-conversion=identity-layout-map" -convert-linalg-to-parallel-loops -canonicalize -gpu-map-parallel-loops -convert-parallel-loops-to-gpu -gpu-kernel-outlining -canonicalize -cse -convert-maximumf-to-maxnumf -convert-memcpy-to-gpu | \
+	${BUDDY_OPT} -lower-affine -gpu-kernel-outlining -gpu-async-region | \
+	${MLIR_OPT} -pass-pipeline "builtin.module(gpu.module(convert-scf-to-cf, convert-gpu-to-nvvm, convert-nvvm-to-llvm,convert-arith-to-llvm, gpu-to-cubin{chip=sm_30 features=+ptx32}))" | \
+	${MLIR_OPT} > /dev/null 
+
 gpu-test-lower:
 	@${MLIR_OPT} forward.mlir -gpu-kernel-outlining -gpu-async-region | \
 	${MLIR_OPT} -pass-pipeline="builtin.module(nvvm-attach-target{chip=sm_70 O=3},\

@@ -51,6 +51,9 @@
 #include <sstream>
 #include <string>
 #include <utility>
+#include <cassert>  
+#include <regex>
+
 using namespace mlir;
 using namespace vector;
 
@@ -101,11 +104,19 @@ void ConvertMemcpyToSSTPass::runOnOperation() {
   // std::set<gpu::AllocOp *> unDeallocatedOperations;
   OpBuilder builder(funcOp->getContext());
 
-
-
   // Copy all function arguments to sst, needs deallocation
   if (processArgs) {
-    builder.setInsertionPointToStart(&(funcOp.getBody().front()));
+    builder.setInsertionPointToStart(&(funcOp.getBody().front()));    
+    std::smatch match;
+    std::string funcNameStr = funcOp.getSymNameAttr().getValue().str();
+    std::regex re("subgraph(\\d+)");
+    Value deviceId;
+    if (std::regex_match(funcNameStr, match, re) && match.size() == 2) {
+        deviceId = builder.create<arith::ConstantIndexOp>(builder.getUnknownLoc(), std::stoi(match[1]));  
+    }
+    auto sstSetDeviceOp = builder.create<sst::SetDeviceOp>(
+        deviceId.getLoc(), deviceId);
+      
     unsigned numArgs = funcOp.getNumArguments();
     for (unsigned i = 0; i < numArgs; ++i) {
       BlockArgument arg = funcOp.getArgument(i);
