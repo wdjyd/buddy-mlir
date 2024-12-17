@@ -87,7 +87,18 @@ def json_to_graph(json_str):
             }
         graph.add_node(op)
 
-    for i, device in enumerate(list(set(_graph['node_map_device'].values()))):
+    def device_sort(item):
+        if item.startswith('gpu'):
+            return (0, int(item[3:]))   # gpu 的分组放在前面，同时用数字排序
+        else:
+            return (1, item)            # cpu 排在后面
+    
+    deviceList = sorted(
+        list(set(_graph['node_map_device'].values())),
+        key=device_sort
+    )
+
+    for i, device in enumerate(deviceList):
         subgraph_name = "subgraph{}".format(i)
         graph.op_groups[subgraph_name] = []
         graph.group_map_device[subgraph_name] = DeviceType(device)

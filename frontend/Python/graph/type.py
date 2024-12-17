@@ -92,4 +92,10 @@ class DeviceType(Enum):
     """
     CPU = 'cpu'
     GPU = 'gpu'
+    GPU0 = 'gpu0'
+    GPU1 = 'gpu1'
+    GPU2 = 'gpu2'
+    GPU3 = 'gpu3'
+    GPU4 = 'gpu4'
+    GPU5 = 'gpu5'
     UNKNOW = 'unknow'

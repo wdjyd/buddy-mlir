@@ -32,6 +32,8 @@ from buddy.compiler.graph.type import DeviceType
 from buddy.compiler.ops import tosa
 from buddy.compiler.graph.json_decoder import json_to_graph
 from model import LeNet
+from cmake_generator import generate_cmake
+from fatbin_shell_generator import generate_shell
 
 # Retrieve the LeNet model path from environment variables.
 model_path = os.environ.get("LENET_EXAMPLE_PATH")
@@ -50,44 +52,57 @@ dynamo_compiler = DynamoCompiler(
     aot_autograd_decomposition=inductor_decomp,
 )
 
-data = torch.randn([1, 1, 28, 28])
-# Import the model into MLIR module and parameters.
-with torch.no_grad():
-    graphs = dynamo_compiler.importer(model, data)
+# data = torch.randn([1, 1, 28, 28])
+# # Import the model into MLIR module and parameters.
+# with torch.no_grad():
+#     graphs = dynamo_compiler.importer(model, data)
 
-assert len(graphs) == 1
-graph = graphs[0]
-params = dynamo_compiler.imported_params[graph]
-pattern_list = [simply_fuse]
-graph.fuse_ops(pattern_list)
+# assert len(graphs) == 1
+# graph = graphs[0]
+# params = dynamo_compiler.imported_params[graph]
+# pattern_list = [simply_fuse]
+# graph.fuse_ops(pattern_list)
 path_prefix = os.path.dirname(os.path.abspath(__file__))
 
-# Convert the lenet graph to JSON string
-json_str = graph.to_json()
-with open(os.path.join(path_prefix, "lenet.json"), "w") as module_file:
-    module_file.write(json_str)
+# # Convert the lenet graph to JSON string
+# json_str = graph.to_json()
+# with open(os.path.join(path_prefix, "lenet.json"), "w") as module_file:
+#     module_file.write(json_str)
+
+# Read Json File
+with open(os.path.join(path_prefix, "lenet.json"), "r") as module_file:
+    json_str = module_file.read()
 
 # Convert the lenet graph Json string to a lenet graph
 graph0 = json_to_graph(json_str)
-driver = GraphDriver(graph)
-driver.subgraphs[0].lower_to_top_level_ir()
-driver.subgraphs[1].lower_to_top_level_ir()
+driver = GraphDriver(graph0)
 
-with open(os.path.join(path_prefix, "subgraph0.mlir"), "w") as module_file:
-    print(driver.subgraphs[0]._imported_module, file=module_file)
-with open(os.path.join(path_prefix, "subgraph1.mlir"), "w") as module_file:
-    print(driver.subgraphs[1]._imported_module, file=module_file)
+# Lower the subgraphs to MLIR module
+for subgraph in driver.subgraphs:
+    subgraph.lower_to_top_level_ir()
+    file_name = subgraph.name + ".mlir"
+    with open(os.path.join(path_prefix, file_name), "w") as module_file:
+        print(subgraph._imported_module, file=module_file)
+
 with open(os.path.join(path_prefix, "forward.mlir"), "w") as module_file:
     print(driver.construct_main_graph(True), file=module_file)
 
-params = dynamo_compiler.imported_params[graph]
-current_path = os.path.dirname(os.path.abspath(__file__))
+# Generate CMakeLists.txt file to compile the graph
+with open(os.path.join(path_prefix, "CMakeLists.txt"), "w") as module_file:
+    print(generate_cmake(driver), file=module_file)
 
-float32_param = np.concatenate(
-    [param.detach().numpy().reshape([-1]) for param in params]
-)
+# Generate makefile file to compile the graph
+with open(os.path.join(path_prefix, "fatbin.sh"), "w") as module_file:
+    print(generate_shell(driver), file=module_file)
 
-float32_param.tofile(Path(current_path) / "arg0.data")
+# params = dynamo_compiler.imported_params[graph]
+# current_path = os.path.dirname(os.path.abspath(__file__))
+
+# float32_param = np.concatenate(
+#     [param.detach().numpy().reshape([-1]) for param in params]
+# )
+
+# float32_param.tofile(Path(current_path) / "arg0.data")
 
 # # Convert the lenet graph to JSON string
 # json_str = graph.to_json()

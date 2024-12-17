@@ -1,4 +1,13 @@
-__pycache__
-*.mlir
+log.mlir
 log.ll
-*.ptx
+log.s
+data
+*.data
+*.json
+*.dot
+__pycache__
+*.pth
+lenet.mlir
+forward.mlir
+subgraph0.mlir
+subgraph1.mlir

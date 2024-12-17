@@ -5,6 +5,8 @@ data
 *.data
 *.json
 *.dot
+*.out
+*.ptx
 __pycache__
 *.pth
 lenet.mlir
