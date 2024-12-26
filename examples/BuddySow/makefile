@@ -43,3 +43,18 @@ buddy_gpu.out:
 	gcc -c -x c++ -DFATBINFILE="\"dlink.fatbin.c\"" -DREGISTERLINKBINARYFILE="\"dlink.reg.c\"" -I. -D__NV_EXTRA_INITIALIZATION= -D__NV_EXTRA_FINALIZATION= -D__CUDA_INCLUDE_COMPILER_INTERNAL_HEADERS__  "-I/usr/local/cuda/bin/../targets/x86_64-linux/include"    -D__CUDACC_VER_MAJOR__=10 -D__CUDACC_VER_MINOR__=1 -D__CUDACC_VER_BUILD__=243 -m64 -o "dlink.o" "/usr/local/cuda/bin/crt/link.stub" 
 	g++ -m64 -o buddy_gpu.out -Wl,--start-group "dlink.o" "main.o"   "-L/usr/local/cuda/bin/../targets/x86_64-linux/lib/stubs" "-L/usr/local/cuda/bin/../targets/x86_64-linux/lib" -lcudadevrt  -L/usr/local/cuda/lib64 -lcudart  -lrt -lpthread  -ldl  -Wl,--end-group
 	rm main.cpp1.ii main.cpp4.ii main.cudafe1.c main.cudafe1.cpp main.cudafe1.gpu main.cudafe1.stub.c main.fatbin.c main.module_id main.o dlink.fatbin.c dlink.o dlink.reg.c
+
+forward-translate:
+	@${MLIR_OPT} ./forward.mlir \
+		-pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith), empty-tensor-to-alloc-tensor, convert-elementwise-to-linalg, arith-bufferize, func.func(linalg-bufferize, tensor-bufferize), func-bufferize)" | \
+	${MLIR_OPT} -pass-pipeline "builtin.module(func.func(buffer-deallocation-simplification, convert-linalg-to-loops), eliminate-empty-tensors, func.func(llvm-request-c-wrappers),convert-math-to-llvm, convert-math-to-libm, convert-scf-to-cf,  convert-arith-to-llvm, expand-strided-metadata, finalize-memref-to-llvm, convert-func-to-llvm, reconcile-unrealized-casts)" | \
+	${MLIR_TRANSLATE} -mlir-to-llvmir -o forward.ll
+
+group-lower:
+	@${BUDDY_OPT} ./group_scheduler.mlir \
+		-pass-pipeline "builtin.module(func.func(buffer-deallocation-simplification, convert-linalg-to-loops), eliminate-empty-tensors, convert-math-to-llvm, convert-math-to-libm, convert-scf-to-cf, convert-arith-to-llvm, expand-strided-metadata, finalize-memref-to-llvm, convert-func-to-llvm, lower-sst-to-llvm, reconcile-unrealized-casts)" -o log.mlir
+
+group-translate:
+	@${BUDDY_OPT} ./group_scheduler.mlir \
+		-pass-pipeline "builtin.module(func.func(buffer-deallocation-simplification, convert-linalg-to-loops), eliminate-empty-tensors, convert-math-to-llvm, convert-math-to-libm, convert-scf-to-cf, convert-arith-to-llvm, expand-strided-metadata, finalize-memref-to-llvm, convert-func-to-llvm, lower-sst-to-llvm, reconcile-unrealized-casts)" | \
+	${MLIR_TRANSLATE} -mlir-to-llvmir -o group_scheduler.ll

@@ -28,12 +28,13 @@ from torch._inductor.decomposition import decompositions as inductor_decomp
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
-from buddy.compiler.graph.type import DeviceType
+from buddy.compiler.graph.type import DeviceType, TensorDType, TensorMeta
 from buddy.compiler.ops import tosa
 from buddy.compiler.graph.json_decoder import json_to_graph
 from model import LeNet
 from cmake_generator import generate_cmake
 from fatbin_shell_generator import generate_shell
+from group_scheduler import group_scheduler
 
 # Retrieve the LeNet model path from environment variables.
 model_path = os.environ.get("LENET_EXAMPLE_PATH")
@@ -52,7 +53,7 @@ dynamo_compiler = DynamoCompiler(
     aot_autograd_decomposition=inductor_decomp,
 )
 
-# data = torch.randn([1, 1, 28, 28])
+# data = torch.randn([30, 1, 28, 28])
 # # Import the model into MLIR module and parameters.
 # with torch.no_grad():
 #     graphs = dynamo_compiler.importer(model, data)
@@ -86,6 +87,19 @@ for subgraph in driver.subgraphs:
 
 with open(os.path.join(path_prefix, "forward.mlir"), "w") as module_file:
     print(driver.construct_main_graph(True), file=module_file)
+
+group_module = group_scheduler(
+    graph0._fake_params,
+    TensorMeta([3, 1, 28, 28], TensorDType.Float32),
+    TensorMeta([3, 10], TensorDType.Float32),
+    TensorMeta([1, 1, 28, 28], TensorDType.Float32),
+    TensorMeta([1, 10], TensorDType.Float32),
+    "forward",
+    3
+)
+
+with open(os.path.join(path_prefix, "group_scheduler.mlir"), "w") as module_file:
+    print(group_module, file=module_file)
 
 # Generate CMakeLists.txt file to compile the graph
 with open(os.path.join(path_prefix, "CMakeLists.txt"), "w") as module_file:

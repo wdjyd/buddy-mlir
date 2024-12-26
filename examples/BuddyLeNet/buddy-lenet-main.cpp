@@ -48,7 +48,21 @@ const cv::Mat imagePreprocessing() {
   // Resize the image to 28x28 pixels.
   cv::resize(inputImage, resizedImage, cv::Size(imageWidth, imageHeight),
              cv::INTER_LINEAR);
-  return resizedImage;
+  // return resizedImage;
+
+  // Create a larger image to hold the copies as a 1D array
+  int copies = 1000;
+  cv::Mat stackedImage; // One-dimensional image
+  for (int i = 0; i < copies; ++i) {
+      if (i == 0) {
+          stackedImage = resizedImage.clone();  // 在第一次创建时直接复制
+      } else {
+          cv::vconcat(stackedImage, resizedImage, stackedImage);  // 纵向连接
+      }
+  }
+      // 显示图像
+  // cv::imshow("Image", stackedImage); // "Image" 是窗口名字
+  return stackedImage;
 }
 
 /// Print [Log] label in bold blue format.
@@ -114,14 +128,23 @@ int main() {
 
   // Preprocess the image to match the input requirements of the model.
   cv::Mat image = imagePreprocessing();
-
+  // std::cout << "sssssssssssssssss" << std::endl;
   // Define the sizes of the input and output tensors.
-  intptr_t sizesInput[4] = {1, 1, 28, 28};
-  intptr_t sizesOutput[2] = {1, 10};
+  intptr_t sizesInput[4] = {1000, 1, 28, 28};
+  intptr_t sizesOutput[2] = {1000, 10};
 
   // Create input and output containers for the image and model output.
   Img<float, 4> input(image, sizesInput, true);
   MemRef<float, 2> output(sizesOutput);
+
+  // auto img = input.getData();
+  // for (int j = 0; j < 28; j++) {
+  //   std::cout << "[ ";
+  //   for (int i = 0; i < 28; ++i) {
+  //     printf("%f ", img[j*28+i]);
+  //   }
+  //   std::cout << "]" << std::endl;
+  // }
 
   // Load model parameters from the specified file.
   std::string lenetDir = getenv("LENET_EXAMPLE_PATH");
@@ -143,12 +166,12 @@ int main() {
   //   std::cout << "]" << std::endl;
   // }
 
-  softmax(out, 10);
+  softmax(&out[1400], 10);
 
   // Find the classification and print the result.
   float maxVal = 0;
   float maxIdx = 0;
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 1400; i < 1410; ++i) {
     if (out[i] > maxVal) {
       maxVal = out[i];
       maxIdx = i;

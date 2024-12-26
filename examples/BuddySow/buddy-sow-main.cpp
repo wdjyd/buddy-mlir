@@ -30,9 +30,10 @@ constexpr size_t ParamsSize = 44426;
 const std::string ImgName = "3.png";
 
 /// Declare LeNet forward function.
-extern "C" void _mlir_ciface_forward(MemRef<float, 2> *output,
-                                     MemRef<float, 1> *arg0,
-                                     Img<float, 4> *input);
+extern "C" void _mlir_ciface_lenet(MemRef<float, 1> *arg0,
+                                   Img<float, 4> *input,
+                                   MemRef<float, 2>* output
+                                     );
 
 /// Function for preprocessing the image to match model input requirements.
 const cv::Mat imagePreprocessing() {
@@ -48,7 +49,18 @@ const cv::Mat imagePreprocessing() {
   // Resize the image to 28x28 pixels.
   cv::resize(inputImage, resizedImage, cv::Size(imageWidth, imageHeight),
              cv::INTER_LINEAR);
-  return resizedImage;
+  // Create a larger image to hold the copies as a 1D array
+  int copies = 3;
+  cv::Mat stackedImage; // One-dimensional image
+  for (int i = 0; i < copies; ++i) {
+      if (i == 0) {
+          stackedImage = resizedImage.clone();  // 在第一次创建时直接复制
+      } else {
+          cv::vconcat(stackedImage, resizedImage, stackedImage);  // 纵向连接
+      }
+  }
+
+  return stackedImage;
 }
 
 /// Print [Log] label in bold blue format.
@@ -116,8 +128,8 @@ int main() {
   cv::Mat image = imagePreprocessing();
 
   // Define the sizes of the input and output tensors.
-  intptr_t sizesInput[4] = {1, 1, 28, 28};
-  intptr_t sizesOutput[2] = {1, 10};
+  intptr_t sizesInput[4] = {3, 1, 28, 28};
+  intptr_t sizesOutput[2] = {3, 10};
 
   // Create input and output containers for the image and model output.
   Img<float, 4> input(image, sizesInput, true);
@@ -130,7 +142,7 @@ int main() {
   loadParameters(paramsDir, paramsContainer);
 
   // Call the forward function of the model.
-  _mlir_ciface_forward(&output, &paramsContainer, &input);
+  _mlir_ciface_lenet(&paramsContainer, &input, &output);
 
   // Apply softmax to the output logits to get probabilities.
   auto out = output.getData();
@@ -143,7 +155,10 @@ int main() {
   //   std::cout << "]" << std::endl;
   // }
 
-  softmax(out, 10);
+  softmax(&out[0], 10);
+  softmax(&out[10], 10);
+  softmax(&out[20], 10);
+
 
   // Find the classification and print the result.
   float maxVal = 0;
@@ -155,8 +170,27 @@ int main() {
     }
   }
 
-  std::cout << "Classification: " << maxIdx << std::endl;
-  std::cout << "Probability: " << maxVal << std::endl;
+  std::cout << "1111 Classification: " << maxIdx << std::endl;
+  std::cout << "1111 Probability: " << maxVal << std::endl;
 
+  for (int i = 10; i < 20; ++i) {
+    if (out[i] > maxVal) {
+      maxVal = out[i];
+      maxIdx = i;
+    }
+  }
+
+  std::cout << "2222 Classification: " << maxIdx << std::endl;
+  std::cout << "2222 Probability: " << maxVal << std::endl;
+
+  for (int i = 20; i < 30; ++i) {
+    if (out[i] > maxVal) {
+      maxVal = out[i];
+      maxIdx = i;
+    }
+  }
+
+  std::cout << "3333 Classification: " << maxIdx << std::endl;
+  std::cout << "3333 Probability: " << maxVal << std::endl;
   return 0;
 }

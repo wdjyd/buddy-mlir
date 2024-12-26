@@ -40,14 +40,13 @@ def json_to_graph(json_str):
             return TensorMeta(shape, dtype)
         return {}
         
-    json_data = json.loads(json_str)
-    _graph = json_data
-    graph_name = _graph['graph_name'] 
+    graph_json = json.loads(json_str)
+    graph_name = graph_json['graph_name'] 
     inputs = []
     params = []
-    for _input in _graph['inputs']:
+    for _input in graph_json['inputs']:
         inputs.append(json_to_tensormeta(_input))
-    for _param in _graph['params']:
+    for _param in graph_json['params']:
         params.append(json_to_tensormeta(_param))
     ops_registry = {}
     ops_registry.update(func_ops_registry)
@@ -60,8 +59,8 @@ def json_to_graph(json_str):
         ops_registry, 
         graph_name
     )
-    graph.device = _graph['device']
-    for _node in _graph['nodes']:
+    graph.device = graph_json['device']
+    for _node in graph_json['nodes']:
         op_class = _node['class']
         op = globals()[op_class]()
 
@@ -94,7 +93,7 @@ def json_to_graph(json_str):
             return (1, item)            # cpu 排在后面
     
     deviceList = sorted(
-        list(set(_graph['node_map_device'].values())),
+        list(set(graph_json['node_map_device'].values())),
         key=device_sort
     )
 
@@ -103,7 +102,7 @@ def json_to_graph(json_str):
         graph.op_groups[subgraph_name] = []
         graph.group_map_device[subgraph_name] = DeviceType(device)
 
-    for node, op_device in _graph['node_map_device'].items():
+    for node, op_device in graph_json['node_map_device'].items():
         op = graph.node_table[node]
         for subgraph_name, group_device in graph.group_map_device.items():
             if op_device == group_device.value:

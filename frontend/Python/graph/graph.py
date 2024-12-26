@@ -173,7 +173,7 @@ class Graph:
     def init_op_group(self):
         """
         Initializes operation groups within the graph.
-
+        
         Returns:
         - None
         """

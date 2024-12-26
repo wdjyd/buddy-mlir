@@ -68,6 +68,10 @@ class GraphDriver:
     def subgraphs(self):
         return list(self._subgraphs.values())
 
+    @property
+    def main_graph(self):
+        return self._graph
+
     def build_subgraph_by_group(self):
         """
         Builds subgraphs from a given graph based on groups.

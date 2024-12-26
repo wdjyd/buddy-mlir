@@ -53,7 +53,7 @@ $ export LENET_EXAMPLE_PATH=${BUDDY_MLIR_BUILD_DIR}/../examples/BuddyLeNet/
 4. Build and run the LeNet example
 
 ```bash
-$ v
+$ cmake -G Ninja .. -DBUDDY_LENET_EXAMPLES=ON
 $ ninja buddy-lenet-run
 $ cd bin
 $ ./buddy-lenet-run
