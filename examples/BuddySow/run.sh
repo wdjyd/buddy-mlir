@@ -1,18 +1,13 @@
-cd ../../
-source env.sh
+cd ../../build
 
-cd examples/BuddySow
-python buddy-lenet-import.py
+export BUDDY_MLIR_BUILD_DIR=$PWD
+export LLVM_MLIR_BUILD_DIR=$PWD/../llvm/build
+export PYTHONPATH=${LLVM_MLIR_BUILD_DIR}/tools/mlir/python_packages/mlir_core:${BUDDY_MLIR_BUILD_DIR}/python_packages:${PYTHONPATH}
+export LENET_EXAMPLE_PATH=${BUDDY_MLIR_BUILD_DIR}/../examples/BuddyLeNet/
+
+cd ../examples/BuddySow
+python3 buddy-lenet-import.py
 sh fatbin.sh
-
-# rm -rf kernel.ptx gpu_sha1.out
-# make subgraph0-kernel.ptx
-# python extract-header.py
-# make gpu_sha1.out
-
-# _RUN_DIR=/home/newdisk/kt/sowProject/tests/sow_test_20241028_161849_subject2
-# make DESIGN_JSON_FILE="$_RUN_DIR"/design.json
-# cp -f gpu_sha1.out "$_RUN_DIR"/buddy_gpu_0.out
 
 
 _RUN_DIR=/root/wafer_project/wafer_test/result/

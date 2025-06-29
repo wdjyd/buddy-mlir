@@ -91,7 +91,18 @@ add_custom_command(
 def generate_executable(subgraph_names):
     subgraph_objs = " ".join([f"{name}.o" for name in subgraph_names])
     command = f"""
-add_library(WAFER_LENET STATIC {subgraph_objs} forward.o)
+add_custom_command(
+    OUTPUT group_scheduler.o
+    COMMAND ${{BUDDY_BINARY_DIR}}/buddy-opt ${{BUDDY_EXAMPLES_DIR}}/BuddySow/group_scheduler.mlir 
+                -pass-pipeline "builtin.module(func.func(buffer-deallocation-simplification, convert-linalg-to-loops), eliminate-empty-tensors, func.func(llvm-request-c-wrappers), convert-math-to-llvm, convert-math-to-libm, convert-scf-to-cf, convert-arith-to-llvm, expand-strided-metadata, finalize-memref-to-llvm, convert-func-to-llvm, lower-sst-to-llvm,  reconcile-unrealized-casts)" | 
+            ${{LLVM_MLIR_BINARY_DIR}}/mlir-translate -mlir-to-llvmir |
+            ${{LLVM_MLIR_BINARY_DIR}}/llvm-as |
+            ${{LLVM_MLIR_BINARY_DIR}}/llc -filetype=obj  -relocation-model=pic -O0 -o ${{BUDDY_BINARY_DIR}}/../examples/BuddySow/group_scheduler.o
+    DEPENDS ${{BUDDY_EXAMPLES_DIR}}/BuddySow/group_scheduler.mlir
+    COMMENT "Building group_scheduler.o"
+    VERBATIM)
+
+add_library(WAFER_LENET STATIC {subgraph_objs} forward.o group_scheduler.o)
 SET_TARGET_PROPERTIES(WAFER_LENET PROPERTIES LINKER_LANGUAGE C)
 add_executable(buddy-sow-run buddy-sow-main.cpp)
 target_link_directories(buddy-sow-run PRIVATE ${{LLVM_MLIR_LIBRARY_DIR}})

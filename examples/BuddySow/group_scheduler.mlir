@@ -1,5 +1,5 @@
 module {
-  func.func @group_scheduler(%arg0: memref<44426xf32>, %arg1: memref<3x1x28x28xf32>, %arg2: memref<3x10xf32>) {
+  func.func @lenet(%arg0: memref<44426xf32>, %arg1: memref<3x1x28x28xf32>, %arg2: memref<3x10xf32>) {
     %0 = "sst.get_cpuid"() : () -> index
     %c0 = arith.constant 0 : index
     %1 = arith.cmpi eq, %0, %c0 : index

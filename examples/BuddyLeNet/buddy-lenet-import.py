@@ -70,63 +70,63 @@ with open(os.path.join(path_prefix, "lenet.json"), "w") as module_file:
 
 # Convert the lenet graph Json string to a lenet graph
 # graph0 = json_to_graph(json_str)
-driver = GraphDriver(graph)
-driver.subgraphs[0].lower_to_top_level_ir()
-driver.subgraphs[1].lower_to_top_level_ir()
+# driver = GraphDriver(graph)
+# driver.subgraphs[0].lower_to_top_level_ir()
+# driver.subgraphs[1].lower_to_top_level_ir()
 
-with open(os.path.join(path_prefix, "subgraph0.mlir"), "w") as module_file:
-    print(driver.subgraphs[0]._imported_module, file=module_file)
-with open(os.path.join(path_prefix, "subgraph1.mlir"), "w") as module_file:
-    print(driver.subgraphs[1]._imported_module, file=module_file)
-with open(os.path.join(path_prefix, "forward.mlir"), "w") as module_file:
-    print(driver.construct_main_graph(True), file=module_file)
+# with open(os.path.join(path_prefix, "subgraph0.mlir"), "w") as module_file:
+#     print(driver.subgraphs[0]._imported_module, file=module_file)
+# with open(os.path.join(path_prefix, "subgraph1.mlir"), "w") as module_file:
+#     print(driver.subgraphs[1]._imported_module, file=module_file)
+# with open(os.path.join(path_prefix, "forward.mlir"), "w") as module_file:
+#     print(driver.construct_main_graph(True), file=module_file)
 
-group_module = group_scheduler(
-    graph._fake_params,
-    TensorMeta([90, 1, 28, 28], TensorDType.Float32),
-    TensorMeta([90, 10], TensorDType.Float32),
-    TensorMeta([30, 1, 28, 28], TensorDType.Float32),
-    TensorMeta([30, 10], TensorDType.Float32),
-    "forward",
-    3
-)
-
-lenet_module = wrapper_module(
-    graph._fake_params,
-    TensorMeta([90, 1, 28, 28], TensorDType.Float32),
-    TensorMeta([90, 10], TensorDType.Float32),
-    TensorMeta([30, 1, 28, 28], TensorDType.Float32),
-    TensorMeta([30, 10], TensorDType.Float32)
-)
-
-with open(os.path.join(path_prefix, "group_scheduler.mlir"), "w") as module_file:
-    print(group_module, file=module_file)
-
-with open(os.path.join(path_prefix, "lenet.mlir"), "w") as module_file:
-    print(lenet_module, file=module_file)
-
-
-# params = dynamo_compiler.imported_params[graph]
-# current_path = os.path.dirname(os.path.abspath(__file__))
-
-# float32_param = np.concatenate(
-#     [param.detach().numpy().reshape([-1]) for param in params]
+# group_module = group_scheduler(
+#     graph._fake_params,
+#     TensorMeta([90, 1, 28, 28], TensorDType.Float32),
+#     TensorMeta([90, 10], TensorDType.Float32),
+#     TensorMeta([30, 1, 28, 28], TensorDType.Float32),
+#     TensorMeta([30, 10], TensorDType.Float32),
+#     "forward",
+#     3
 # )
 
-# float32_param.tofile(Path(current_path) / "arg0.data")
+# lenet_module = wrapper_module(
+#     graph._fake_params,
+#     TensorMeta([90, 1, 28, 28], TensorDType.Float32),
+#     TensorMeta([90, 10], TensorDType.Float32),
+#     TensorMeta([30, 1, 28, 28], TensorDType.Float32),
+#     TensorMeta([30, 10], TensorDType.Float32)
+# )
 
-# Convert the lenet graph to JSON string
-json_str = graph.to_json()
-with open(os.path.join(path_prefix, "lenet.json"), "w") as module_file:
-    module_file.write(json_str)
+# with open(os.path.join(path_prefix, "group_scheduler.mlir"), "w") as module_file:
+#     print(group_module, file=module_file)
 
-# # Convert the lenet graph Json string to a lenet graph
-# graph0 = json_to_graph(json_str)
-# graph0.lower_to_top_level_ir()
 # with open(os.path.join(path_prefix, "lenet.mlir"), "w") as module_file:
-#     print(graph0._imported_module, file=module_file)
+#     print(lenet_module, file=module_file)
 
-# # Convert the lenet graph to DOT string
+
+# # params = dynamo_compiler.imported_params[graph]
+# # current_path = os.path.dirname(os.path.abspath(__file__))
+
+# # float32_param = np.concatenate(
+# #     [param.detach().numpy().reshape([-1]) for param in params]
+# # )
+
+# # float32_param.tofile(Path(current_path) / "arg0.data")
+
+# # Convert the lenet graph to JSON string
+# json_str = graph.to_json()
+# with open(os.path.join(path_prefix, "lenet.json"), "w") as module_file:
+#     module_file.write(json_str)
+
+# # # Convert the lenet graph Json string to a lenet graph
+# # graph0 = json_to_graph(json_str)
+# # graph0.lower_to_top_level_ir()
+# # with open(os.path.join(path_prefix, "lenet.mlir"), "w") as module_file:
+# #     print(graph0._imported_module, file=module_file)
+
+# # # Convert the lenet graph to DOT string
 # dot_str = graph.to_dot()
 # with open(os.path.join(path_prefix, "graph.dot"), "w") as module_file:
 #     module_file.write(dot_str)

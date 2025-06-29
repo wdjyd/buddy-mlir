@@ -3,7 +3,6 @@ log.ll
 log.s
 data
 *.data
-*.json
 *.dot
 *.out
 *.ptx

@@ -30,7 +30,7 @@ from mlir.dialects import arith, memref, func, gpu, scf, tosa, vector, bufferiza
 from buddy.compiler.graph.type import TensorMeta
 from buddy.compiler.ops.utils import *
 
-GROUP_SCHEDULER_FUNC_NAME = "group_scheduler"
+GROUP_SCHEDULER_FUNC_NAME = "lenet"
 
 def group_scheduler(
     params: List[TensorMeta],

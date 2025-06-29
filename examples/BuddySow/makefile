@@ -56,5 +56,5 @@ group-lower:
 
 group-translate:
 	@${BUDDY_OPT} ./group_scheduler.mlir \
-		-pass-pipeline "builtin.module(func.func(buffer-deallocation-simplification, convert-linalg-to-loops), eliminate-empty-tensors, convert-math-to-llvm, convert-math-to-libm, convert-scf-to-cf, convert-arith-to-llvm, expand-strided-metadata, finalize-memref-to-llvm, convert-func-to-llvm, lower-sst-to-llvm, reconcile-unrealized-casts)" | \
+		-pass-pipeline "builtin.module(func.func(buffer-deallocation-simplification, convert-linalg-to-loops), eliminate-empty-tensors, func.func(llvm-request-c-wrappers), convert-math-to-llvm, convert-math-to-libm, convert-scf-to-cf, convert-arith-to-llvm, expand-strided-metadata, finalize-memref-to-llvm, convert-func-to-llvm, lower-sst-to-llvm, reconcile-unrealized-casts)" | \
 	${MLIR_TRANSLATE} -mlir-to-llvmir -o group_scheduler.ll

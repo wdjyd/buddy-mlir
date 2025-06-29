@@ -5,7 +5,7 @@ declare ptr @malloc(i64)
 
 declare void @free(ptr)
 
-define void @group_scheduler(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5, ptr %6, i64 %7, i64 %8, i64 %9, i64 %10, i64 %11, i64 %12, i64 %13, i64 %14, i64 %15, ptr %16, ptr %17, i64 %18, i64 %19, i64 %20, i64 %21, i64 %22) {
+define void @lenet(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5, ptr %6, i64 %7, i64 %8, i64 %9, i64 %10, i64 %11, i64 %12, i64 %13, i64 %14, i64 %15, ptr %16, ptr %17, i64 %18, i64 %19, i64 %20, i64 %21, i64 %22) {
   %24 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } undef, ptr %0, 0
   %25 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %24, ptr %1, 1
   %26 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %25, i64 %2, 2
@@ -51,7 +51,7 @@ define void @group_scheduler(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5, ptr
   %64 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } undef, ptr %50, 0
   %65 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %64, ptr %51, 1
   %66 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %65, i64 0, 2
-  %67 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %66, i64 30, 3, 0
+  %67 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %66, i64 1, 3, 0
   %68 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %67, i64 784, 4, 0
   %69 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %68, i64 1, 3, 1
   %70 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %69, i64 784, 4, 1
@@ -59,11 +59,11 @@ define void @group_scheduler(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5, ptr
   %72 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %71, i64 28, 4, 2
   %73 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %72, i64 28, 3, 3
   %74 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %73, i64 1, 4, 3
-  %75 = call ptr @malloc(i64 ptrtoint (ptr getelementptr (float, ptr null, i32 23520) to i64))
+  %75 = call ptr @malloc(i64 ptrtoint (ptr getelementptr (float, ptr null, i32 784) to i64))
   %76 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } undef, ptr %75, 0
   %77 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %76, ptr %75, 1
   %78 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %77, i64 0, 2
-  %79 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %78, i64 30, 3, 0
+  %79 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %78, i64 1, 3, 0
   %80 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %79, i64 1, 3, 1
   %81 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %80, i64 28, 3, 2
   %82 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %81, i64 28, 3, 3
@@ -73,8 +73,8 @@ define void @group_scheduler(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5, ptr
   %86 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %85, i64 1, 4, 3
   %87 = getelementptr float, ptr %51, i64 0
   %88 = getelementptr float, ptr %75, i64 0
-  call void @llvm.memcpy.p0.p0.i64(ptr %88, ptr %87, i64 mul (i64 ptrtoint (ptr getelementptr (float, ptr null, i32 1) to i64), i64 23520), i1 false)
-  %89 = call { ptr, ptr, i64, [2 x i64], [2 x i64] } @forward(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %75, ptr %75, i64 0, i64 30, i64 1, i64 28, i64 28, i64 784, i64 784, i64 28, i64 1)
+  call void @llvm.memcpy.p0.p0.i64(ptr %88, ptr %87, i64 mul (i64 ptrtoint (ptr getelementptr (float, ptr null, i32 1) to i64), i64 784), i1 false)
+  %89 = call { ptr, ptr, i64, [2 x i64], [2 x i64] } @forward(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %75, ptr %75, i64 0, i64 1, i64 1, i64 28, i64 28, i64 784, i64 784, i64 28, i64 1)
   %90 = extractvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %46, 0
   %91 = extractvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %46, 1
   %92 = insertvalue { ptr, ptr, i64 } undef, ptr %90, 0
@@ -88,7 +88,7 @@ define void @group_scheduler(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5, ptr
   %100 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } undef, ptr %90, 0
   %101 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %100, ptr %91, 1
   %102 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %101, i64 0, 2
-  %103 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %102, i64 30, 3, 0
+  %103 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %102, i64 1, 3, 0
   %104 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %103, i64 10, 4, 0
   %105 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %104, i64 10, 3, 1
   %106 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %105, i64 1, 4, 1
@@ -125,8 +125,8 @@ define void @group_scheduler(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5, ptr
   %132 = extractvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %39, 4, 3
   %133 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } undef, ptr %119, 0
   %134 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %133, ptr %120, 1
-  %135 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %134, i64 23520, 2
-  %136 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %135, i64 30, 3, 0
+  %135 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %134, i64 784, 2
+  %136 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %135, i64 1, 3, 0
   %137 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %136, i64 784, 4, 0
   %138 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %137, i64 1, 3, 1
   %139 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %138, i64 784, 4, 1
@@ -134,11 +134,11 @@ define void @group_scheduler(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5, ptr
   %141 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %140, i64 28, 4, 2
   %142 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %141, i64 28, 3, 3
   %143 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %142, i64 1, 4, 3
-  %144 = call ptr @malloc(i64 ptrtoint (ptr getelementptr (float, ptr null, i32 23520) to i64))
+  %144 = call ptr @malloc(i64 ptrtoint (ptr getelementptr (float, ptr null, i32 784) to i64))
   %145 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } undef, ptr %144, 0
   %146 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %145, ptr %144, 1
   %147 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %146, i64 0, 2
-  %148 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %147, i64 30, 3, 0
+  %148 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %147, i64 1, 3, 0
   %149 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %148, i64 1, 3, 1
   %150 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %149, i64 28, 3, 2
   %151 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %150, i64 28, 3, 3
@@ -146,10 +146,10 @@ define void @group_scheduler(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5, ptr
   %153 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %152, i64 784, 4, 1
   %154 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %153, i64 28, 4, 2
   %155 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %154, i64 1, 4, 3
-  %156 = getelementptr float, ptr %120, i64 23520
+  %156 = getelementptr float, ptr %120, i64 784
   %157 = getelementptr float, ptr %144, i64 0
-  call void @llvm.memcpy.p0.p0.i64(ptr %157, ptr %156, i64 mul (i64 ptrtoint (ptr getelementptr (float, ptr null, i32 1) to i64), i64 23520), i1 false)
-  %158 = call { ptr, ptr, i64, [2 x i64], [2 x i64] } @forward(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %144, ptr %144, i64 0, i64 30, i64 1, i64 28, i64 28, i64 784, i64 784, i64 28, i64 1)
+  call void @llvm.memcpy.p0.p0.i64(ptr %157, ptr %156, i64 mul (i64 ptrtoint (ptr getelementptr (float, ptr null, i32 1) to i64), i64 784), i1 false)
+  %158 = call { ptr, ptr, i64, [2 x i64], [2 x i64] } @forward(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %144, ptr %144, i64 0, i64 1, i64 1, i64 28, i64 28, i64 784, i64 784, i64 28, i64 1)
   %159 = extractvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %46, 0
   %160 = extractvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %46, 1
   %161 = insertvalue { ptr, ptr, i64 } undef, ptr %159, 0
@@ -162,8 +162,8 @@ define void @group_scheduler(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5, ptr
   %168 = extractvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %46, 4, 1
   %169 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } undef, ptr %159, 0
   %170 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %169, ptr %160, 1
-  %171 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %170, i64 300, 2
-  %172 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %171, i64 30, 3, 0
+  %171 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %170, i64 10, 2
+  %172 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %171, i64 1, 3, 0
   %173 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %172, i64 10, 4, 0
   %174 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %173, i64 10, 3, 1
   %175 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %174, i64 1, 4, 1
@@ -175,7 +175,7 @@ define void @group_scheduler(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5, ptr
   %181 = extractvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %158, 1
   %182 = extractvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %158, 2
   %183 = getelementptr float, ptr %181, i64 %182
-  %184 = getelementptr float, ptr %160, i64 300
+  %184 = getelementptr float, ptr %160, i64 10
   call void @llvm.memcpy.p0.p0.i64(ptr %184, ptr %183, i64 %180, i1 false)
   br label %185
 
@@ -200,8 +200,8 @@ define void @group_scheduler(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5, ptr
   %201 = extractvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %39, 4, 3
   %202 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } undef, ptr %188, 0
   %203 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %202, ptr %189, 1
-  %204 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %203, i64 47040, 2
-  %205 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %204, i64 30, 3, 0
+  %204 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %203, i64 1568, 2
+  %205 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %204, i64 1, 3, 0
   %206 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %205, i64 784, 4, 0
   %207 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %206, i64 1, 3, 1
   %208 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %207, i64 784, 4, 1
@@ -209,11 +209,11 @@ define void @group_scheduler(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5, ptr
   %210 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %209, i64 28, 4, 2
   %211 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %210, i64 28, 3, 3
   %212 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %211, i64 1, 4, 3
-  %213 = call ptr @malloc(i64 ptrtoint (ptr getelementptr (float, ptr null, i32 23520) to i64))
+  %213 = call ptr @malloc(i64 ptrtoint (ptr getelementptr (float, ptr null, i32 784) to i64))
   %214 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } undef, ptr %213, 0
   %215 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %214, ptr %213, 1
   %216 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %215, i64 0, 2
-  %217 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %216, i64 30, 3, 0
+  %217 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %216, i64 1, 3, 0
   %218 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %217, i64 1, 3, 1
   %219 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %218, i64 28, 3, 2
   %220 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %219, i64 28, 3, 3
@@ -221,10 +221,10 @@ define void @group_scheduler(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5, ptr
   %222 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %221, i64 784, 4, 1
   %223 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %222, i64 28, 4, 2
   %224 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %223, i64 1, 4, 3
-  %225 = getelementptr float, ptr %189, i64 47040
+  %225 = getelementptr float, ptr %189, i64 1568
   %226 = getelementptr float, ptr %213, i64 0
-  call void @llvm.memcpy.p0.p0.i64(ptr %226, ptr %225, i64 mul (i64 ptrtoint (ptr getelementptr (float, ptr null, i32 1) to i64), i64 23520), i1 false)
-  %227 = call { ptr, ptr, i64, [2 x i64], [2 x i64] } @forward(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %213, ptr %213, i64 0, i64 30, i64 1, i64 28, i64 28, i64 784, i64 784, i64 28, i64 1)
+  call void @llvm.memcpy.p0.p0.i64(ptr %226, ptr %225, i64 mul (i64 ptrtoint (ptr getelementptr (float, ptr null, i32 1) to i64), i64 784), i1 false)
+  %227 = call { ptr, ptr, i64, [2 x i64], [2 x i64] } @forward(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %213, ptr %213, i64 0, i64 1, i64 1, i64 28, i64 28, i64 784, i64 784, i64 28, i64 1)
   %228 = extractvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %46, 0
   %229 = extractvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %46, 1
   %230 = insertvalue { ptr, ptr, i64 } undef, ptr %228, 0
@@ -237,8 +237,8 @@ define void @group_scheduler(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5, ptr
   %237 = extractvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %46, 4, 1
   %238 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } undef, ptr %228, 0
   %239 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %238, ptr %229, 1
-  %240 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %239, i64 600, 2
-  %241 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %240, i64 30, 3, 0
+  %240 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %239, i64 20, 2
+  %241 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %240, i64 1, 3, 0
   %242 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %241, i64 10, 4, 0
   %243 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %242, i64 10, 3, 1
   %244 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %243, i64 1, 4, 1
@@ -250,7 +250,7 @@ define void @group_scheduler(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5, ptr
   %250 = extractvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %227, 1
   %251 = extractvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %227, 2
   %252 = getelementptr float, ptr %250, i64 %251
-  %253 = getelementptr float, ptr %229, i64 600
+  %253 = getelementptr float, ptr %229, i64 20
   call void @llvm.memcpy.p0.p0.i64(ptr %253, ptr %252, i64 %249, i1 false)
   br label %254
 
@@ -258,7 +258,65 @@ define void @group_scheduler(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5, ptr
   ret void
 }
 
-declare { ptr, ptr, i64, [2 x i64], [2 x i64] } @forward(ptr, ptr, i64, i64, i64, ptr, ptr, i64, i64, i64, i64, i64, i64, i64, i64, i64)
+define void @_mlir_ciface_lenet(ptr %0, ptr %1, ptr %2) {
+  %4 = load { ptr, ptr, i64, [1 x i64], [1 x i64] }, ptr %0, align 8
+  %5 = extractvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %4, 0
+  %6 = extractvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %4, 1
+  %7 = extractvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %4, 2
+  %8 = extractvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %4, 3, 0
+  %9 = extractvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %4, 4, 0
+  %10 = load { ptr, ptr, i64, [4 x i64], [4 x i64] }, ptr %1, align 8
+  %11 = extractvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %10, 0
+  %12 = extractvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %10, 1
+  %13 = extractvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %10, 2
+  %14 = extractvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %10, 3, 0
+  %15 = extractvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %10, 3, 1
+  %16 = extractvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %10, 3, 2
+  %17 = extractvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %10, 3, 3
+  %18 = extractvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %10, 4, 0
+  %19 = extractvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %10, 4, 1
+  %20 = extractvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %10, 4, 2
+  %21 = extractvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %10, 4, 3
+  %22 = load { ptr, ptr, i64, [2 x i64], [2 x i64] }, ptr %2, align 8
+  %23 = extractvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %22, 0
+  %24 = extractvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %22, 1
+  %25 = extractvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %22, 2
+  %26 = extractvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %22, 3, 0
+  %27 = extractvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %22, 3, 1
+  %28 = extractvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %22, 4, 0
+  %29 = extractvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %22, 4, 1
+  call void @lenet(ptr %5, ptr %6, i64 %7, i64 %8, i64 %9, ptr %11, ptr %12, i64 %13, i64 %14, i64 %15, i64 %16, i64 %17, i64 %18, i64 %19, i64 %20, i64 %21, ptr %23, ptr %24, i64 %25, i64 %26, i64 %27, i64 %28, i64 %29)
+  ret void
+}
+
+define private { ptr, ptr, i64, [2 x i64], [2 x i64] } @forward(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4, ptr %5, ptr %6, i64 %7, i64 %8, i64 %9, i64 %10, i64 %11, i64 %12, i64 %13, i64 %14, i64 %15) {
+  %17 = alloca { ptr, ptr, i64, [2 x i64], [2 x i64] }, i64 1, align 8
+  %18 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } undef, ptr %0, 0
+  %19 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %18, ptr %1, 1
+  %20 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %19, i64 %2, 2
+  %21 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %20, i64 %3, 3, 0
+  %22 = insertvalue { ptr, ptr, i64, [1 x i64], [1 x i64] } %21, i64 %4, 4, 0
+  %23 = alloca { ptr, ptr, i64, [1 x i64], [1 x i64] }, i64 1, align 8
+  store { ptr, ptr, i64, [1 x i64], [1 x i64] } %22, ptr %23, align 8
+  %24 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } undef, ptr %5, 0
+  %25 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %24, ptr %6, 1
+  %26 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %25, i64 %7, 2
+  %27 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %26, i64 %8, 3, 0
+  %28 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %27, i64 %12, 4, 0
+  %29 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %28, i64 %9, 3, 1
+  %30 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %29, i64 %13, 4, 1
+  %31 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %30, i64 %10, 3, 2
+  %32 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %31, i64 %14, 4, 2
+  %33 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %32, i64 %11, 3, 3
+  %34 = insertvalue { ptr, ptr, i64, [4 x i64], [4 x i64] } %33, i64 %15, 4, 3
+  %35 = alloca { ptr, ptr, i64, [4 x i64], [4 x i64] }, i64 1, align 8
+  store { ptr, ptr, i64, [4 x i64], [4 x i64] } %34, ptr %35, align 8
+  call void @_mlir_ciface_forward(ptr %17, ptr %23, ptr %35)
+  %36 = load { ptr, ptr, i64, [2 x i64], [2 x i64] }, ptr %17, align 8
+  ret { ptr, ptr, i64, [2 x i64], [2 x i64] } %36
+}
+
+declare void @_mlir_ciface_forward(ptr, ptr, ptr)
 
 declare i64 @sstGetCpuId()
 

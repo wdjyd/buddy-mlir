@@ -3,10 +3,10 @@ log.ll
 log.s
 data
 *.data
-*.json
+# *.json
 *.dot
 __pycache__
-*.pth
+# *.pth
 lenet.mlir
 forward.mlir
 subgraph0.mlir
