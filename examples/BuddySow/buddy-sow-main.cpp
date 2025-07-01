@@ -18,7 +18,7 @@
 #include <buddy/DIP/ImageContainer.h>
 #include <chrono>
 #include <cstdlib>
-#include <filesystem>
+// #include <filesystem>
 #include <fstream>
 #include <limits>
 #include <opencv2/opencv.hpp>
@@ -79,8 +79,8 @@ void loadParameters(const std::string &paramFilePath,
   std::cout << "Loading params..." << std::endl;
   printLogLabel();
   // Print the canonical path of the parameter file.
-  std::cout << "Params file: " << std::filesystem::canonical(paramFilePath)
-            << std::endl;
+  // std::cout << "Params file: " << std::filesystem::canonical(paramFilePath)
+  //           << std::endl;
   // Read the parameter data into the provided memory reference.
   paramFile.read(reinterpret_cast<char *>(params.getData()),
                  sizeof(float) * (params.getSize()));

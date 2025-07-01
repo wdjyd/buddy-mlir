@@ -18,7 +18,7 @@
 #include <buddy/DIP/ImageContainer.h>
 #include <chrono>
 #include <cstdlib>
-#include <filesystem>
+// #include <filesystem>
 #include <fstream>
 #include <limits>
 #include <opencv2/opencv.hpp>
@@ -51,7 +51,7 @@ const cv::Mat imagePreprocessing() {
   // return resizedImage;
 
   // Create a larger image to hold the copies as a 1D array
-  int copies = 1000;
+  int copies = 1;
   cv::Mat stackedImage; // One-dimensional image
   for (int i = 0; i < copies; ++i) {
       if (i == 0) {
@@ -81,8 +81,8 @@ void loadParameters(const std::string &paramFilePath,
   std::cout << "Loading params..." << std::endl;
   printLogLabel();
   // Print the canonical path of the parameter file.
-  std::cout << "Params file: " << std::filesystem::canonical(paramFilePath)
-            << std::endl;
+  // std::cout << "Params file: " << std::filesystem::canonical(paramFilePath)
+  //           << std::endl;
   // Read the parameter data into the provided memory reference.
   paramFile.read(reinterpret_cast<char *>(params.getData()),
                  sizeof(float) * (params.getSize()));
@@ -130,8 +130,8 @@ int main() {
   cv::Mat image = imagePreprocessing();
   // std::cout << "sssssssssssssssss" << std::endl;
   // Define the sizes of the input and output tensors.
-  intptr_t sizesInput[4] = {1000, 1, 28, 28};
-  intptr_t sizesOutput[2] = {1000, 10};
+  intptr_t sizesInput[4] = {1, 1, 28, 28};
+  intptr_t sizesOutput[2] = {1, 10};
 
   // Create input and output containers for the image and model output.
   Img<float, 4> input(image, sizesInput, true);
@@ -166,12 +166,12 @@ int main() {
   //   std::cout << "]" << std::endl;
   // }
 
-  softmax(&out[1400], 10);
+  softmax(out, 10);
 
   // Find the classification and print the result.
   float maxVal = 0;
   float maxIdx = 0;
-  for (int i = 1400; i < 1410; ++i) {
+  for (int i = 0; i < 10; ++i) {
     if (out[i] > maxVal) {
       maxVal = out[i];
       maxIdx = i;
