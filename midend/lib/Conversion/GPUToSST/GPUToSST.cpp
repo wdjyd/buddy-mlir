@@ -57,11 +57,11 @@ public:
 
     // get kernel id    
     std::string kernelNameStr = kernelName.getValue().str();
-    std::regex regex(".*_kernel_(\\d+)$");  
+    std::regex regex("CUDA_kernel_(\\d+)_(\\d+)");  
     std::smatch match;
     Value kernelId;
-    if (std::regex_match(kernelNameStr, match, regex) && match.size() == 2) {
-        kernelId = rewriter.create<arith::ConstantIndexOp>(loc, std::stoi(match[1]));  
+    if (std::regex_match(kernelNameStr, match, regex) && match.size() == 3) {
+        kernelId = rewriter.create<arith::ConstantIndexOp>(loc, std::stoi(match[2]));  
     } else {
         return failure();
     }
@@ -70,15 +70,17 @@ public:
     mlir::Block *block = op->getBlock();
     func::FuncOp func = dyn_cast<func::FuncOp>(block->getParentOp());
     std::string funcNameStr = func.getSymNameAttr().getValue().str();
-    std::regex re("subgraph(\\d+)");
+    std::regex re("subgraph(\\d+)_(\\d+)");
     Value funcId;
-    if (std::regex_match(funcNameStr, match, re) && match.size() == 2) {
+    Value opId;
+    if (std::regex_match(funcNameStr, match, re) && match.size() == 3) {
         funcId = rewriter.create<arith::ConstantIndexOp>(loc, std::stoi(match[1]));  
+        opId = rewriter.create<arith::ConstantIndexOp>(loc, std::stoi(match[2]));  
     } else {
         return failure();
     }
-    Value handle = rewriter.create<sst::RegisterFatbinOp>(loc, /*type=*/rewriter.getIndexType(), /*fatbin=*/funcId);
-    rewriter.create<sst::RegisterFuncOp>(loc, /*handle=*/handle, /*hostFunc=*/kernelId);
+    Value handle = rewriter.create<sst::RegisterFatbinOp>(loc, /*type=*/rewriter.getIndexType(), /*fatbin=*/funcId, /*oid=*/opId);
+    rewriter.create<sst::RegisterFuncOp>(loc, /*handle=*/handle, /*oid=*/opId, /*hostFunc=*/kernelId);
     // sst configure kernel
     rewriter.create<sst::ConfigureCallOp>(loc, /*bx=*/blockSizeX, /*by=*/blockSizeY, /*bz=*/blockSizeZ, 
                             /*gx=*/gridSizeX, /*gy=*/gridSizeY, /*gz=*/gridSizeZ, /*sharedMem=*/c0);

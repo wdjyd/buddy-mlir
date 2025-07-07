@@ -92,21 +92,39 @@ def json_to_graph(json_str):
         else:
             return (1, item)            # cpu 排在后面
     
-    deviceList = sorted(
-        list(set(graph_json['node_map_device'].values())),
-        key=device_sort
-    )
+    # deviceList = sorted(
+    #     list(set(graph_json['node_map_device'].values())),
+    #     key=device_sort
+    # )
 
-    for i, device in enumerate(deviceList):
-        subgraph_name = "subgraph{}".format(i)
-        graph.op_groups[subgraph_name] = []
-        graph.group_map_device[subgraph_name] = DeviceType(device)
+    # for i, device in enumerate(deviceList):
+    #     subgraph_name = "subgraph{}".format(i)
+    #     graph.op_groups[subgraph_name] = []
+    #     graph.group_map_device[subgraph_name] = DeviceType(device)
 
+    device_ops_count = {}
     for node, op_device in graph_json['node_map_device'].items():
-        op = graph.node_table[node]
-        for subgraph_name, group_device in graph.group_map_device.items():
-            if op_device == group_device.value:
-                graph.op_groups[subgraph_name].append(op)
-                break
+        if op_device.startswith('gpu'):
+            gpu_id = int(op_device[3:])
+            if op_device in device_ops_count:
+                device_ops_count[op_device] += 1
+            else:
+                device_ops_count[op_device] = 0
+            subgraph_name = "subgraph{}_{}".format(gpu_id, device_ops_count[op_device])
+            op = graph.node_table[node]
+            graph.op_groups[subgraph_name] = [op]
+            graph.group_map_device[subgraph_name] = DeviceType('gpu')
+    
+    subgraph_cpu_id = len(device_ops_count)
+    for node, op_device in graph_json['node_map_device'].items():
+        if op_device.startswith('cpu'):
+            if op_device in device_ops_count:
+                device_ops_count[op_device] += 1
+            else:
+                device_ops_count[op_device] = 0
+            subgraph_name = "subgraph{}_{}".format(subgraph_cpu_id, device_ops_count[op_device])
+            op = graph.node_table[node]
+            graph.op_groups[subgraph_name] = [op]
+            graph.group_map_device[subgraph_name] = DeviceType('cpu')
 
     return graph

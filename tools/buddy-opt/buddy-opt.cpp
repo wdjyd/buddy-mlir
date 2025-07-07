@@ -134,6 +134,7 @@ int main(int argc, char **argv) {
                   buddy::vector_exp::VectorExpDialect,
                   buddy::gemmini::GemminiDialect,
                   buddy::sche::ScheDialect,
+                  mlir::gpu::GPUDialect,
                   mlir::sst::SSTDialect>();
   // clang-format on
 

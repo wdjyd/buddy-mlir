@@ -20,3 +20,5 @@ cp buddy-sow-run "$_RUN_DIR"/wafer_run_exe
 
 cd ../../../wafer_project/wafer_test/tools
 ./design_run
+
+

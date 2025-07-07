@@ -28,6 +28,7 @@
 #include "mlir/Support/LLVM.h"
 #include "mlir/Transforms/RegionUtils.h"
 #include <limits>
+#include <regex>
 
 namespace mlir {
 #define GEN_PASS_DEF_GPULAUNCHSINKINDEXCOMPUTATIONS
@@ -350,12 +351,26 @@ public:
     SymbolTable symbolTable(getOperation());
     bool modified = false;
     for (auto func : getOperation().getOps<func::FuncOp>()) {
-      int kernel_id = 1;
+      static int kernel_id = 1;
       // Insert just after the function.
       Block::iterator insertPt(func->getNextNode());
       auto funcWalkResult = func.walk([&](gpu::LaunchOp op) {
+
+        // get func name
+        mlir::Block *block = op->getBlock();
+        func::FuncOp func = dyn_cast<func::FuncOp>(block->getParentOp());
+        std::string funcNameStr = func.getSymNameAttr().getValue().str();
+        std::regex re("subgraph(\\d+)_(\\d+)");    
+        std::smatch match;
+
+        int funcId = -1;
+        int opId = -1;
+        if (std::regex_match(funcNameStr, match, re) && match.size() == 3) {
+          funcId = std::stoi(match[1].str());  
+          opId = std::stoi(match[2].str());  
+        } 
         SetVector<Value> operands;
-        std::string kernelFnName = "CUDA_kernel_" + std::to_string(kernel_id++);
+        std::string kernelFnName = "CUDA_kernel_" + std::to_string(opId) + "_" + std::to_string(kernel_id++);
 
         gpu::GPUFuncOp outlinedFunc =
             outlineKernelFuncImpl(op, kernelFnName, operands);
@@ -363,6 +378,7 @@ public:
         // Create nested module and insert outlinedFunc. The module will
         // originally get the same name as the function, but may be renamed on
         // insertion into the parent module.
+
         auto kernelModule = createKernelModule(outlinedFunc, symbolTable);
         symbolTable.insert(kernelModule, insertPt);
 

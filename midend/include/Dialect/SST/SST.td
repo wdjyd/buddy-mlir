@@ -27,13 +27,15 @@ class SST_Op<string mnemonic, list<Trait> traits = []> :
 
 // TODO: add file_name as an argument (now name is fixed)
 def SST_RegisterFatbinOp : SST_Op <"reg_fatbin", []> {
-  let arguments = (ins Index :$fatbin);
+  let arguments = (ins Index :$fatbin,
+                       Index :$oid);
   let results = (outs Index :$handle);
 }
 
 // TODO: add device_func_name as an argument (now name is fixed)
 def SST_RegisterFuncOp : SST_Op <"reg_func", []> {
   let arguments = (ins Index :$handle,
+                       Index :$oid,
                        Index :$hostFunc);
 }
 

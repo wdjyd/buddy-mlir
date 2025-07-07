@@ -101,11 +101,13 @@ protected:
   FunctionCallBuilder RegisterFatBinCallBuilder = {
       "__sstcudaRegisterFatBinary",
       llvmIntPtrType /* unsigned int fatbin_handle */,
-      {llvmIntPtrType /* unsigned int fatbin_file */,}};
+      {llvmIntPtrType /* unsigned int funcId */,
+       llvmIntPtrType /* unsigned int opId */}};
   FunctionCallBuilder RegisterFuncCallBuilder = {
       "__sstcudaRegisterFunction",
       llvmVoidType,
       {llvmIntPtrType /* uint64_t fatCubinHandle */,
+       llvmIntPtrType /* uint64_t opId */,
        llvmIntPtrType /* uint64_t hostFun */}};
   FunctionCallBuilder ConfigureCallBuilder = {
       "sstcudaConfigureCall",
@@ -430,7 +432,7 @@ LogicalResult ConvertRegisterFatbinOpToSSTCallPattern::matchAndRewrite(
   //   return failure();
 
   Location loc = registerFatbinOp.getLoc();
-  Value Fatbin = RegisterFatBinCallBuilder.create(loc, rewriter, {adaptor.getFatbin()}).getResult();
+  Value Fatbin = RegisterFatBinCallBuilder.create(loc, rewriter, {adaptor.getFatbin(), adaptor.getOid()}).getResult();
 
   rewriter.replaceOp(registerFatbinOp, Fatbin);
   return success();
@@ -444,7 +446,7 @@ LogicalResult ConvertRegisterFuncOpToSSTCallPattern::matchAndRewrite(
   //   return failure();
 
   Location loc = registerFuncOp.getLoc();
-  RegisterFuncCallBuilder.create(loc, rewriter, {adaptor.getHandle(), adaptor.getHostFunc()});
+  RegisterFuncCallBuilder.create(loc, rewriter, {adaptor.getHandle(), adaptor.getOid(), adaptor.getHostFunc()});
 
   rewriter.eraseOp(registerFuncOp);
   return success();

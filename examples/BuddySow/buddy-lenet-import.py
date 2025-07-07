@@ -107,7 +107,7 @@ with open(os.path.join(path_prefix, "CMakeLists.txt"), "w") as module_file:
 
 # Generate makefile file to compile the graph
 with open(os.path.join(path_prefix, "fatbin.sh"), "w") as module_file:
-    print(generate_shell(driver), file=module_file)
+    print(generate_shell(driver, 2), file=module_file)
 
 # params = dynamo_compiler.imported_params[graph]
 # current_path = os.path.dirname(os.path.abspath(__file__))

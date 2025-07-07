@@ -58,3 +58,18 @@ group-translate:
 	@${BUDDY_OPT} ./group_scheduler.mlir \
 		-pass-pipeline "builtin.module(func.func(buffer-deallocation-simplification, convert-linalg-to-loops), eliminate-empty-tensors, func.func(llvm-request-c-wrappers), convert-math-to-llvm, convert-math-to-libm, convert-scf-to-cf, convert-arith-to-llvm, expand-strided-metadata, finalize-memref-to-llvm, convert-func-to-llvm, lower-sst-to-llvm, reconcile-unrealized-casts)" | \
 	${MLIR_TRANSLATE} -mlir-to-llvmir -o group_scheduler.ll
+
+subgraph-translate:
+	@${BUDDY_OPT} ./subgraph0_0.mlir  \
+		-pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" | \
+	${BUDDY_OPT} -one-shot-bufferize="bufferize-function-boundaries=1 function-boundary-type-conversion=identity-layout-map" \
+		-convert-linalg-to-parallel-loops \
+		-canonicalize \
+		-gpu-map-parallel-loops \
+		-convert-parallel-loops-to-gpu \
+		-gpu-kernel-outlining \
+		-canonicalize \
+		-cse | \
+	${BUDDY_OPT} -convert-maximumf-to-maxnumf -convert-memcpy-to-sst -convert-gpu-to-sst | \
+    ${BUDDY_OPT} -llvm-request-c-wrappers --gpu-to-llvm -lower-sst-to-llvm -expand-strided-metadata -finalize-memref-to-llvm  -reconcile-unrealized-casts | \
+	${MLIR_TRANSLATE} -mlir-to-llvmir -o subgraph0_0.ll

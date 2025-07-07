@@ -109,9 +109,9 @@ void ConvertMemcpyToSSTPass::runOnOperation() {
     builder.setInsertionPointToStart(&(funcOp.getBody().front()));    
     std::smatch match;
     std::string funcNameStr = funcOp.getSymNameAttr().getValue().str();
-    std::regex re("subgraph(\\d+)");
+    std::regex re("subgraph(\\d+)_(\\d+)");
     Value deviceId;
-    if (std::regex_match(funcNameStr, match, re) && match.size() == 2) {
+    if (std::regex_match(funcNameStr, match, re) && match.size() == 3) {
         deviceId = builder.create<arith::ConstantIndexOp>(builder.getUnknownLoc(), std::stoi(match[1]));  
     }
     auto sstSetDeviceOp = builder.create<sst::SetDeviceOp>(

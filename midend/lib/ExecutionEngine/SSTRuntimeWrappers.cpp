@@ -3,7 +3,7 @@
 #include <cstdint>
 
 extern "C"
-unsigned int __sstcudaRegisterFatBinary(uint64_t fatbin) {
+unsigned int __sstcudaRegisterFatBinary(uint64_t fatbin, uint64_t oid) {
   const char* work_dir = getenv("WAFER_WORKSPACE");
   char file_name[256];
   if (work_dir != NULL) {
@@ -18,10 +18,11 @@ unsigned int __sstcudaRegisterFatBinary(uint64_t fatbin) {
 
 extern "C"
 void __sstcudaRegisterFunction(uint64_t fatCubinHandle,
+                               uint64_t oid,
                                uint64_t hostFun){
   char deviceFun[256];
-  snprintf(deviceFun, sizeof(deviceFun), "CUDA_kernel_%d", static_cast<int>(hostFun));
-  __cudaRegisterFunction(fatCubinHandle, hostFun, deviceFun);
+  snprintf(deviceFun, sizeof(deviceFun), "CUDA_kernel_%d_%d", static_cast<int>(oid), static_cast<int>(hostFun));
+  __cudaRegisterFunction(fatCubinHandle, 1, deviceFun);
 }
 
 extern "C"

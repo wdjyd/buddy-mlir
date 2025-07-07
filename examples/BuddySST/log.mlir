@@ -1,72 +1,584 @@
+#map = affine_map<(d0)[s0, s1] -> (d0 * s0 + s1)>
+#map1 = affine_map<(d0, d1)[s0, s1] -> (d0 + (d1 * s0) * 2 + s1 * 2)>
+#map2 = affine_map<(d0, d1)[s0, s1] -> (d0 + d1 * s0 + s1)>
 module attributes {gpu.container_module} {
-  llvm.func @malloc(i64) -> !llvm.ptr
-  llvm.func @main(%arg0: f32) attributes {llvm.emit_c_interface} {
-    %0 = llvm.mlir.constant(128 : index) : i64
-    %1 = llvm.mlir.constant(4 : index) : i64
-    %2 = llvm.mlir.constant(1 : index) : i64
-    %3 = llvm.mlir.constant(0 : index) : i64
-    %4 = llvm.mlir.constant(128 : index) : i64
-    %5 = llvm.mlir.constant(1 : index) : i64
-    %6 = llvm.mlir.zero : !llvm.ptr
-    %7 = llvm.getelementptr %6[128] : (!llvm.ptr) -> !llvm.ptr, f32
-    %8 = llvm.ptrtoint %7 : !llvm.ptr to i64
-    %9 = llvm.call @malloc(%8) : (i64) -> !llvm.ptr
-    %10 = llvm.mlir.undef : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>
-    %11 = llvm.insertvalue %9, %10[0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
-    %12 = llvm.insertvalue %9, %11[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
-    %13 = llvm.mlir.constant(0 : index) : i64
-    %14 = llvm.insertvalue %13, %12[2] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
-    %15 = llvm.insertvalue %4, %14[3, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
-    %16 = llvm.insertvalue %5, %15[4, 0] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
-    llvm.br ^bb1(%3 : i64)
-  ^bb1(%17: i64):  // 2 preds: ^bb0, ^bb2
-    %18 = llvm.icmp "slt" %17, %0 : i64
-    llvm.cond_br %18, ^bb2, ^bb3
-  ^bb2:  // pred: ^bb1
-    %19 = llvm.getelementptr %9[%17] : (!llvm.ptr, i64) -> !llvm.ptr, f32
-    llvm.store %arg0, %19 : f32, !llvm.ptr
-    %20 = llvm.add %17, %2  : i64
-    llvm.br ^bb1(%20 : i64)
-  ^bb3:  // pred: ^bb1
-    llvm.br ^bb4(%3 : i64)
-  ^bb4(%21: i64):  // 2 preds: ^bb3, ^bb5
-    %22 = llvm.icmp "slt" %21, %0 : i64
-    llvm.cond_br %22, ^bb5, ^bb6
-  ^bb5:  // pred: ^bb4
-    %23 = llvm.extractvalue %16[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
-    %24 = llvm.getelementptr %23[%21] : (!llvm.ptr, i64) -> !llvm.ptr, f32
-    %25 = llvm.load %24 {alignment = 4 : i64} : !llvm.ptr -> vector<4xf32>
-    %26 = llvm.fadd %25, %25  : vector<4xf32>
-    %27 = llvm.extractvalue %16[1] : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> 
-    %28 = llvm.getelementptr %27[%21] : (!llvm.ptr, i64) -> !llvm.ptr, f32
-    llvm.store %26, %28 {alignment = 4 : i64} : vector<4xf32>, !llvm.ptr
-    %29 = llvm.add %21, %1  : i64
-    llvm.br ^bb4(%29 : i64)
-  ^bb6:  // pred: ^bb4
-    %30 = llvm.mlir.constant(1 : index) : i64
-    %31 = llvm.alloca %30 x !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)> : (i64) -> !llvm.ptr
-    llvm.store %16, %31 : !llvm.struct<(ptr, ptr, i64, array<1 x i64>, array<1 x i64>)>, !llvm.ptr
-    %32 = llvm.mlir.constant(1 : index) : i64
-    %33 = llvm.mlir.undef : !llvm.struct<(i64, ptr)>
-    %34 = llvm.insertvalue %32, %33[0] : !llvm.struct<(i64, ptr)> 
-    %35 = llvm.insertvalue %31, %34[1] : !llvm.struct<(i64, ptr)> 
-    llvm.call @printMemrefF32(%32, %31) : (i64, !llvm.ptr) -> ()
-    llvm.return
+  memref.global "private" constant @__constant_30x84xf32 : memref<30x84xf32> = dense<0.000000e+00> {alignment = 64 : i64}
+  memref.global "private" constant @__constant_30x120xf32 : memref<30x120xf32> = dense<0.000000e+00> {alignment = 64 : i64}
+  memref.global "private" constant @__constant_2xi32 : memref<2xi32> = dense<[1, 0]> {alignment = 64 : i64}
+  memref.global "private" constant @__constant_30x16x8x8xf32 : memref<30x16x8x8xf32> = dense<0.000000e+00> {alignment = 64 : i64}
+  memref.global "private" constant @__constant_4xi32_0 : memref<4xi32> = dense<[0, 3, 1, 2]> {alignment = 64 : i64}
+  memref.global "private" constant @__constant_4xi32 : memref<4xi32> = dense<[0, 2, 3, 1]> {alignment = 64 : i64}
+  memref.global "private" constant @__constant_30x6x24x24xf32 : memref<30x6x24x24xf32> = dense<0.000000e+00> {alignment = 64 : i64}
+  func.func @subgraph1(%arg0: memref<30x6x24x24xf32>, %arg1: memref<16x6x5x5xf32>, %arg2: memref<16xf32>, %arg3: memref<120x256xf32>, %arg4: memref<120xf32>, %arg5: memref<84x120xf32>, %arg6: memref<84xf32>, %arg7: memref<10x84xf32>, %arg8: memref<10xf32>) -> memref<30x10xf32> {
+    %memref = gpu.alloc  () : memref<30x6x24x24xf32>
+    gpu.memcpy  %memref, %arg0 : memref<30x6x24x24xf32>, memref<30x6x24x24xf32>
+    %memref_0 = gpu.alloc  () : memref<16x6x5x5xf32>
+    gpu.memcpy  %memref_0, %arg1 : memref<16x6x5x5xf32>, memref<16x6x5x5xf32>
+    %memref_1 = gpu.alloc  () : memref<16xf32>
+    gpu.memcpy  %memref_1, %arg2 : memref<16xf32>, memref<16xf32>
+    %memref_2 = gpu.alloc  () : memref<120x256xf32>
+    gpu.memcpy  %memref_2, %arg3 : memref<120x256xf32>, memref<120x256xf32>
+    %memref_3 = gpu.alloc  () : memref<120xf32>
+    gpu.memcpy  %memref_3, %arg4 : memref<120xf32>, memref<120xf32>
+    %memref_4 = gpu.alloc  () : memref<84x120xf32>
+    gpu.memcpy  %memref_4, %arg5 : memref<84x120xf32>, memref<84x120xf32>
+    %memref_5 = gpu.alloc  () : memref<84xf32>
+    gpu.memcpy  %memref_5, %arg6 : memref<84xf32>, memref<84xf32>
+    %memref_6 = gpu.alloc  () : memref<10x84xf32>
+    gpu.memcpy  %memref_6, %arg7 : memref<10x84xf32>, memref<10x84xf32>
+    %memref_7 = gpu.alloc  () : memref<10xf32>
+    gpu.memcpy  %memref_7, %arg8 : memref<10xf32>, memref<10xf32>
+    %c10 = arith.constant 10 : index
+    %c30 = arith.constant 30 : index
+    %c84 = arith.constant 84 : index
+    %c120 = arith.constant 120 : index
+    %c256 = arith.constant 256 : index
+    %c4 = arith.constant 4 : index
+    %c16 = arith.constant 16 : index
+    %c8 = arith.constant 8 : index
+    %c5 = arith.constant 5 : index
+    %c12 = arith.constant 12 : index
+    %c6 = arith.constant 6 : index
+    %c24 = arith.constant 24 : index
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %c2 = arith.constant 2 : index
+    %cst = arith.constant 0.000000e+00 : f32
+    %cst_8 = arith.constant -3.40282347E+38 : f32
+    %0 = memref.get_global @__constant_30x6x24x24xf32 : memref<30x6x24x24xf32>
+    %memref_9 = gpu.alloc  () : memref<30x6x24x24xf32>
+    gpu.memcpy  %memref_9, %0 : memref<30x6x24x24xf32>, memref<30x6x24x24xf32>
+    %memref_10 = gpu.alloc  () : memref<30x6x24x24xf32>
+    gpu.launch_func  @CUDA_kernel_1::@CUDA_kernel_1 blocks in (%c30, %c6, %c24) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %memref : memref<30x6x24x24xf32>, %memref_9 : memref<30x6x24x24xf32>, %memref_10 : memref<30x6x24x24xf32>, %c24 : index)
+    %memref_11 = gpu.alloc  () : memref<30x24x24x6xf32>
+    gpu.launch_func  @CUDA_kernel_2::@CUDA_kernel_2 blocks in (%c30, %c24, %c24) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %memref_10 : memref<30x6x24x24xf32>, %memref_11 : memref<30x24x24x6xf32>, %c6 : index)
+    %memref_12 = gpu.alloc  () : memref<30x12x12x6xf32>
+    gpu.launch_func  @CUDA_kernel_3::@CUDA_kernel_3 blocks in (%c30, %c12, %c12) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %cst_8 : f32, %memref_12 : memref<30x12x12x6xf32>, %c6 : index)
+    gpu.launch_func  @CUDA_kernel_4::@CUDA_kernel_4 blocks in (%c30, %c12, %c12) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %memref_11 : memref<30x24x24x6xf32>, %memref_12 : memref<30x12x12x6xf32>, %c2 : index, %c6 : index)
+    %memref_13 = gpu.alloc  () : memref<30x6x12x12xf32>
+    gpu.launch_func  @CUDA_kernel_5::@CUDA_kernel_5 blocks in (%c30, %c6, %c12) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %memref_12 : memref<30x12x12x6xf32>, %memref_13 : memref<30x6x12x12xf32>, %c12 : index)
+    %memref_14 = gpu.alloc  () : memref<30x12x12x6xf32>
+    gpu.launch_func  @CUDA_kernel_6::@CUDA_kernel_6 blocks in (%c30, %c12, %c12) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %memref_13 : memref<30x6x12x12xf32>, %memref_14 : memref<30x12x12x6xf32>, %c6 : index)
+    %memref_15 = gpu.alloc  () : memref<16x5x5x6xf32>
+    gpu.launch_func  @CUDA_kernel_7::@CUDA_kernel_7 blocks in (%c16, %c5, %c5) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %memref_0 : memref<16x6x5x5xf32>, %memref_15 : memref<16x5x5x6xf32>, %c6 : index)
+    %memref_16 = gpu.alloc  () : memref<30x8x8x16xf32>
+    gpu.launch_func  @CUDA_kernel_8::@CUDA_kernel_8 blocks in (%c30, %c8, %c8) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %cst : f32, %memref_16 : memref<30x8x8x16xf32>, %c16 : index)
+    %memref_17 = gpu.alloc  () : memref<30x8x8x16xf32>
+    gpu.launch_func  @CUDA_kernel_9::@CUDA_kernel_9 blocks in (%c30, %c8, %c8) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %memref_14 : memref<30x12x12x6xf32>, %memref_15 : memref<16x5x5x6xf32>, %memref_16 : memref<30x8x8x16xf32>, %c6 : index, %c5 : index, %c16 : index)
+    gpu.launch_func  @CUDA_kernel_10::@CUDA_kernel_10 blocks in (%c30, %c8, %c8) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %memref_1 : memref<16xf32>, %memref_16 : memref<30x8x8x16xf32>, %memref_17 : memref<30x8x8x16xf32>, %c16 : index)
+    %memref_18 = gpu.alloc  () : memref<30x16x8x8xf32>
+    gpu.launch_func  @CUDA_kernel_11::@CUDA_kernel_11 blocks in (%c30, %c16, %c8) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %memref_17 : memref<30x8x8x16xf32>, %memref_18 : memref<30x16x8x8xf32>, %c8 : index)
+    %1 = memref.get_global @__constant_30x16x8x8xf32 : memref<30x16x8x8xf32>
+    %memref_19 = gpu.alloc  () : memref<30x16x8x8xf32>
+    gpu.memcpy  %memref_19, %1 : memref<30x16x8x8xf32>, memref<30x16x8x8xf32>
+    %memref_20 = gpu.alloc  () : memref<30x16x8x8xf32>
+    gpu.launch_func  @CUDA_kernel_12::@CUDA_kernel_12 blocks in (%c30, %c16, %c8) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %memref_18 : memref<30x16x8x8xf32>, %memref_19 : memref<30x16x8x8xf32>, %memref_20 : memref<30x16x8x8xf32>, %c8 : index)
+    %memref_21 = gpu.alloc  () : memref<30x8x8x16xf32>
+    gpu.launch_func  @CUDA_kernel_13::@CUDA_kernel_13 blocks in (%c30, %c8, %c8) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %memref_20 : memref<30x16x8x8xf32>, %memref_21 : memref<30x8x8x16xf32>, %c16 : index)
+    %memref_22 = gpu.alloc  () : memref<30x4x4x16xf32>
+    gpu.launch_func  @CUDA_kernel_14::@CUDA_kernel_14 blocks in (%c30, %c4, %c4) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %cst_8 : f32, %memref_22 : memref<30x4x4x16xf32>, %c16 : index)
+    gpu.launch_func  @CUDA_kernel_15::@CUDA_kernel_15 blocks in (%c30, %c4, %c4) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %memref_21 : memref<30x8x8x16xf32>, %memref_22 : memref<30x4x4x16xf32>, %c2 : index, %c16 : index)
+    %memref_23 = gpu.alloc  () : memref<30x16x4x4xf32>
+    gpu.launch_func  @CUDA_kernel_16::@CUDA_kernel_16 blocks in (%c30, %c16, %c4) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %memref_22 : memref<30x4x4x16xf32>, %memref_23 : memref<30x16x4x4xf32>, %c4 : index)
+    %memref_24 = gpu.alloc  () : memref<256x120xf32>
+    gpu.launch_func  @CUDA_kernel_17::@CUDA_kernel_17 blocks in (%c256, %c120, %c1) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %memref_2 : memref<120x256xf32>, %memref_24 : memref<256x120xf32>)
+    %collapse_shape = memref.collapse_shape %memref_23 [[0], [1, 2, 3]] : memref<30x16x4x4xf32> into memref<30x256xf32>
+    %expand_shape = memref.expand_shape %collapse_shape [[0, 1], [2]] : memref<30x256xf32> into memref<1x30x256xf32>
+    %expand_shape_25 = memref.expand_shape %memref_24 [[0, 1], [2]] : memref<256x120xf32> into memref<1x256x120xf32>
+    %memref_26 = gpu.alloc  () : memref<1x30x120xf32>
+    gpu.launch_func  @CUDA_kernel_18::@CUDA_kernel_18 blocks in (%c30, %c120, %c1) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %cst : f32, %memref_26 : memref<1x30x120xf32>)
+    gpu.launch_func  @CUDA_kernel_19::@CUDA_kernel_19 blocks in (%c30, %c120, %c1) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %expand_shape : memref<1x30x256xf32>, %expand_shape_25 : memref<1x256x120xf32>, %memref_26 : memref<1x30x120xf32>, %c256 : index)
+    %collapse_shape_27 = memref.collapse_shape %memref_26 [[0, 1], [2]] : memref<1x30x120xf32> into memref<30x120xf32>
+    %expand_shape_28 = memref.expand_shape %memref_3 [[0, 1]] : memref<120xf32> into memref<1x120xf32>
+    %memref_29 = gpu.alloc  () : memref<30x120xf32>
+    gpu.launch_func  @CUDA_kernel_20::@CUDA_kernel_20 blocks in (%c30, %c120, %c1) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %expand_shape_28 : memref<1x120xf32>, %collapse_shape_27 : memref<30x120xf32>, %memref_29 : memref<30x120xf32>)
+    %2 = memref.get_global @__constant_30x120xf32 : memref<30x120xf32>
+    %memref_30 = gpu.alloc  () : memref<30x120xf32>
+    gpu.memcpy  %memref_30, %2 : memref<30x120xf32>, memref<30x120xf32>
+    %memref_31 = gpu.alloc  () : memref<30x120xf32>
+    gpu.launch_func  @CUDA_kernel_21::@CUDA_kernel_21 blocks in (%c30, %c120, %c1) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %memref_29 : memref<30x120xf32>, %memref_30 : memref<30x120xf32>, %memref_31 : memref<30x120xf32>)
+    %memref_32 = gpu.alloc  () : memref<120x84xf32>
+    gpu.launch_func  @CUDA_kernel_22::@CUDA_kernel_22 blocks in (%c120, %c84, %c1) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %memref_4 : memref<84x120xf32>, %memref_32 : memref<120x84xf32>)
+    %expand_shape_33 = memref.expand_shape %memref_31 [[0, 1], [2]] : memref<30x120xf32> into memref<1x30x120xf32>
+    %expand_shape_34 = memref.expand_shape %memref_32 [[0, 1], [2]] : memref<120x84xf32> into memref<1x120x84xf32>
+    %memref_35 = gpu.alloc  () : memref<1x30x84xf32>
+    gpu.launch_func  @CUDA_kernel_23::@CUDA_kernel_23 blocks in (%c30, %c84, %c1) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %cst : f32, %memref_35 : memref<1x30x84xf32>)
+    gpu.launch_func  @CUDA_kernel_24::@CUDA_kernel_24 blocks in (%c30, %c84, %c1) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %expand_shape_33 : memref<1x30x120xf32>, %expand_shape_34 : memref<1x120x84xf32>, %memref_35 : memref<1x30x84xf32>, %c120 : index)
+    %collapse_shape_36 = memref.collapse_shape %memref_35 [[0, 1], [2]] : memref<1x30x84xf32> into memref<30x84xf32>
+    %expand_shape_37 = memref.expand_shape %memref_5 [[0, 1]] : memref<84xf32> into memref<1x84xf32>
+    %memref_38 = gpu.alloc  () : memref<30x84xf32>
+    gpu.launch_func  @CUDA_kernel_25::@CUDA_kernel_25 blocks in (%c30, %c84, %c1) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %expand_shape_37 : memref<1x84xf32>, %collapse_shape_36 : memref<30x84xf32>, %memref_38 : memref<30x84xf32>)
+    %3 = memref.get_global @__constant_30x84xf32 : memref<30x84xf32>
+    %memref_39 = gpu.alloc  () : memref<30x84xf32>
+    gpu.memcpy  %memref_39, %3 : memref<30x84xf32>, memref<30x84xf32>
+    %memref_40 = gpu.alloc  () : memref<30x84xf32>
+    gpu.launch_func  @CUDA_kernel_26::@CUDA_kernel_26 blocks in (%c30, %c84, %c1) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %memref_38 : memref<30x84xf32>, %memref_39 : memref<30x84xf32>, %memref_40 : memref<30x84xf32>)
+    %memref_41 = gpu.alloc  () : memref<84x10xf32>
+    gpu.launch_func  @CUDA_kernel_27::@CUDA_kernel_27 blocks in (%c84, %c10, %c1) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %memref_6 : memref<10x84xf32>, %memref_41 : memref<84x10xf32>)
+    %expand_shape_42 = memref.expand_shape %memref_40 [[0, 1], [2]] : memref<30x84xf32> into memref<1x30x84xf32>
+    %expand_shape_43 = memref.expand_shape %memref_41 [[0, 1], [2]] : memref<84x10xf32> into memref<1x84x10xf32>
+    %memref_44 = gpu.alloc  () : memref<1x30x10xf32>
+    gpu.launch_func  @CUDA_kernel_28::@CUDA_kernel_28 blocks in (%c30, %c10, %c1) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %cst : f32, %memref_44 : memref<1x30x10xf32>)
+    gpu.launch_func  @CUDA_kernel_29::@CUDA_kernel_29 blocks in (%c30, %c10, %c1) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %expand_shape_42 : memref<1x30x84xf32>, %expand_shape_43 : memref<1x84x10xf32>, %memref_44 : memref<1x30x10xf32>, %c84 : index)
+    %collapse_shape_45 = memref.collapse_shape %memref_44 [[0, 1], [2]] : memref<1x30x10xf32> into memref<30x10xf32>
+    %expand_shape_46 = memref.expand_shape %memref_7 [[0, 1]] : memref<10xf32> into memref<1x10xf32>
+    %memref_47 = gpu.alloc  () : memref<30x10xf32>
+    gpu.launch_func  @CUDA_kernel_30::@CUDA_kernel_30 blocks in (%c30, %c10, %c1) threads in (%c1, %c1, %c1)  args(%c1 : index, %c0 : index, %expand_shape_46 : memref<1x10xf32>, %collapse_shape_45 : memref<30x10xf32>, %memref_47 : memref<30x10xf32>)
+    %alloc = memref.alloc() : memref<30x10xf32>
+    gpu.memcpy  %alloc, %memref_47 : memref<30x10xf32>, memref<30x10xf32>
+    gpu.dealloc  %memref_39 : memref<30x84xf32>
+    gpu.dealloc  %memref_7 : memref<10xf32>
+    return %alloc : memref<30x10xf32>
   }
-  llvm.func @_mlir_ciface_main(%arg0: f32) attributes {llvm.emit_c_interface} {
-    llvm.call @main(%arg0) : (f32) -> ()
-    llvm.return
+  gpu.module @CUDA_kernel_1 {
+    gpu.func @CUDA_kernel_1(%arg0: index, %arg1: index, %arg2: memref<30x6x24x24xf32>, %arg3: memref<30x6x24x24xf32>, %arg4: memref<30x6x24x24xf32>, %arg5: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = affine.apply #map(%0)[%arg0, %arg1]
+      %4 = affine.apply #map(%1)[%arg0, %arg1]
+      %5 = affine.apply #map(%2)[%arg0, %arg1]
+      scf.for %arg6 = %arg1 to %arg5 step %arg0 {
+        %6 = memref.load %arg2[%3, %4, %5, %arg6] : memref<30x6x24x24xf32>
+        %7 = memref.load %arg3[%3, %4, %5, %arg6] : memref<30x6x24x24xf32>
+        %8 = arith.maxnumf %6, %7 : f32
+        memref.store %8, %arg4[%3, %4, %5, %arg6] : memref<30x6x24x24xf32>
+      }
+      gpu.return
+    }
   }
-  llvm.func private @printMemrefF32(%arg0: i64, %arg1: !llvm.ptr) attributes {llvm.emit_c_interface, sym_visibility = "private"} {
-    %0 = llvm.mlir.undef : !llvm.struct<(i64, ptr)>
-    %1 = llvm.insertvalue %arg0, %0[0] : !llvm.struct<(i64, ptr)> 
-    %2 = llvm.insertvalue %arg1, %1[1] : !llvm.struct<(i64, ptr)> 
-    %3 = llvm.mlir.constant(1 : index) : i64
-    %4 = llvm.alloca %3 x !llvm.struct<(i64, ptr)> : (i64) -> !llvm.ptr
-    llvm.store %2, %4 : !llvm.struct<(i64, ptr)>, !llvm.ptr
-    llvm.call @_mlir_ciface_printMemrefF32(%4) : (!llvm.ptr) -> ()
-    llvm.return
+  gpu.module @CUDA_kernel_2 {
+    gpu.func @CUDA_kernel_2(%arg0: index, %arg1: index, %arg2: memref<30x6x24x24xf32>, %arg3: memref<30x24x24x6xf32>, %arg4: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = affine.apply #map(%0)[%arg0, %arg1]
+      %4 = affine.apply #map(%1)[%arg0, %arg1]
+      %5 = affine.apply #map(%2)[%arg0, %arg1]
+      scf.for %arg5 = %arg1 to %arg4 step %arg0 {
+        %6 = memref.load %arg2[%3, %arg5, %4, %5] : memref<30x6x24x24xf32>
+        memref.store %6, %arg3[%3, %4, %5, %arg5] : memref<30x24x24x6xf32>
+      }
+      gpu.return
+    }
   }
-  llvm.func @_mlir_ciface_printMemrefF32(!llvm.ptr) attributes {llvm.emit_c_interface, sym_visibility = "private"}
+  gpu.module @CUDA_kernel_3 {
+    gpu.func @CUDA_kernel_3(%arg0: index, %arg1: index, %arg2: f32, %arg3: memref<30x12x12x6xf32>, %arg4: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = affine.apply #map(%0)[%arg0, %arg1]
+      %4 = affine.apply #map(%1)[%arg0, %arg1]
+      %5 = affine.apply #map(%2)[%arg0, %arg1]
+      scf.for %arg5 = %arg1 to %arg4 step %arg0 {
+        memref.store %arg2, %arg3[%3, %4, %5, %arg5] : memref<30x12x12x6xf32>
+      }
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_4 {
+    gpu.func @CUDA_kernel_4(%arg0: index, %arg1: index, %arg2: memref<30x24x24x6xf32>, %arg3: memref<30x12x12x6xf32>, %arg4: index, %arg5: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = affine.apply #map(%0)[%arg0, %arg1]
+      %4 = affine.apply #map(%1)[%arg0, %arg1]
+      %5 = affine.apply #map(%2)[%arg0, %arg1]
+      scf.for %arg6 = %arg1 to %arg5 step %arg0 {
+        scf.for %arg7 = %arg1 to %arg4 step %arg0 {
+          scf.for %arg8 = %arg1 to %arg4 step %arg0 {
+            %6 = affine.apply #map1(%arg7, %1)[%arg0, %arg1]
+            %7 = affine.apply #map1(%arg8, %2)[%arg0, %arg1]
+            %8 = memref.load %arg2[%3, %6, %7, %arg6] : memref<30x24x24x6xf32>
+            %9 = memref.load %arg3[%3, %4, %5, %arg6] : memref<30x12x12x6xf32>
+            %10 = arith.maxnumf %9, %8 : f32
+            memref.store %10, %arg3[%3, %4, %5, %arg6] : memref<30x12x12x6xf32>
+          }
+        }
+      }
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_5 {
+    gpu.func @CUDA_kernel_5(%arg0: index, %arg1: index, %arg2: memref<30x12x12x6xf32>, %arg3: memref<30x6x12x12xf32>, %arg4: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = affine.apply #map(%0)[%arg0, %arg1]
+      %4 = affine.apply #map(%1)[%arg0, %arg1]
+      %5 = affine.apply #map(%2)[%arg0, %arg1]
+      scf.for %arg5 = %arg1 to %arg4 step %arg0 {
+        %6 = memref.load %arg2[%3, %5, %arg5, %4] : memref<30x12x12x6xf32>
+        memref.store %6, %arg3[%3, %4, %5, %arg5] : memref<30x6x12x12xf32>
+      }
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_6 {
+    gpu.func @CUDA_kernel_6(%arg0: index, %arg1: index, %arg2: memref<30x6x12x12xf32>, %arg3: memref<30x12x12x6xf32>, %arg4: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = affine.apply #map(%0)[%arg0, %arg1]
+      %4 = affine.apply #map(%1)[%arg0, %arg1]
+      %5 = affine.apply #map(%2)[%arg0, %arg1]
+      scf.for %arg5 = %arg1 to %arg4 step %arg0 {
+        %6 = memref.load %arg2[%3, %arg5, %4, %5] : memref<30x6x12x12xf32>
+        memref.store %6, %arg3[%3, %4, %5, %arg5] : memref<30x12x12x6xf32>
+      }
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_7 {
+    gpu.func @CUDA_kernel_7(%arg0: index, %arg1: index, %arg2: memref<16x6x5x5xf32>, %arg3: memref<16x5x5x6xf32>, %arg4: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = affine.apply #map(%0)[%arg0, %arg1]
+      %4 = affine.apply #map(%1)[%arg0, %arg1]
+      %5 = affine.apply #map(%2)[%arg0, %arg1]
+      scf.for %arg5 = %arg1 to %arg4 step %arg0 {
+        %6 = memref.load %arg2[%3, %arg5, %4, %5] : memref<16x6x5x5xf32>
+        memref.store %6, %arg3[%3, %4, %5, %arg5] : memref<16x5x5x6xf32>
+      }
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_8 {
+    gpu.func @CUDA_kernel_8(%arg0: index, %arg1: index, %arg2: f32, %arg3: memref<30x8x8x16xf32>, %arg4: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = affine.apply #map(%0)[%arg0, %arg1]
+      %4 = affine.apply #map(%1)[%arg0, %arg1]
+      %5 = affine.apply #map(%2)[%arg0, %arg1]
+      scf.for %arg5 = %arg1 to %arg4 step %arg0 {
+        memref.store %arg2, %arg3[%3, %4, %5, %arg5] : memref<30x8x8x16xf32>
+      }
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_9 {
+    gpu.func @CUDA_kernel_9(%arg0: index, %arg1: index, %arg2: memref<30x12x12x6xf32>, %arg3: memref<16x5x5x6xf32>, %arg4: memref<30x8x8x16xf32>, %arg5: index, %arg6: index, %arg7: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = affine.apply #map(%0)[%arg0, %arg1]
+      %4 = affine.apply #map(%1)[%arg0, %arg1]
+      %5 = affine.apply #map(%2)[%arg0, %arg1]
+      scf.for %arg8 = %arg1 to %arg7 step %arg0 {
+        scf.for %arg9 = %arg1 to %arg6 step %arg0 {
+          scf.for %arg10 = %arg1 to %arg6 step %arg0 {
+            scf.for %arg11 = %arg1 to %arg5 step %arg0 {
+              %6 = affine.apply #map2(%arg9, %1)[%arg0, %arg1]
+              %7 = affine.apply #map2(%arg10, %2)[%arg0, %arg1]
+              %8 = memref.load %arg2[%3, %6, %7, %arg11] : memref<30x12x12x6xf32>
+              %9 = memref.load %arg3[%arg8, %arg9, %arg10, %arg11] : memref<16x5x5x6xf32>
+              %10 = memref.load %arg4[%3, %4, %5, %arg8] : memref<30x8x8x16xf32>
+              %11 = arith.mulf %8, %9 : f32
+              %12 = arith.addf %10, %11 : f32
+              memref.store %12, %arg4[%3, %4, %5, %arg8] : memref<30x8x8x16xf32>
+            }
+          }
+        }
+      }
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_10 {
+    gpu.func @CUDA_kernel_10(%arg0: index, %arg1: index, %arg2: memref<16xf32>, %arg3: memref<30x8x8x16xf32>, %arg4: memref<30x8x8x16xf32>, %arg5: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = affine.apply #map(%0)[%arg0, %arg1]
+      %4 = affine.apply #map(%1)[%arg0, %arg1]
+      %5 = affine.apply #map(%2)[%arg0, %arg1]
+      scf.for %arg6 = %arg1 to %arg5 step %arg0 {
+        %6 = memref.load %arg2[%arg6] : memref<16xf32>
+        %7 = memref.load %arg3[%3, %4, %5, %arg6] : memref<30x8x8x16xf32>
+        %8 = arith.addf %6, %7 : f32
+        memref.store %8, %arg4[%3, %4, %5, %arg6] : memref<30x8x8x16xf32>
+      }
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_11 {
+    gpu.func @CUDA_kernel_11(%arg0: index, %arg1: index, %arg2: memref<30x8x8x16xf32>, %arg3: memref<30x16x8x8xf32>, %arg4: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = affine.apply #map(%0)[%arg0, %arg1]
+      %4 = affine.apply #map(%1)[%arg0, %arg1]
+      %5 = affine.apply #map(%2)[%arg0, %arg1]
+      scf.for %arg5 = %arg1 to %arg4 step %arg0 {
+        %6 = memref.load %arg2[%3, %5, %arg5, %4] : memref<30x8x8x16xf32>
+        memref.store %6, %arg3[%3, %4, %5, %arg5] : memref<30x16x8x8xf32>
+      }
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_12 {
+    gpu.func @CUDA_kernel_12(%arg0: index, %arg1: index, %arg2: memref<30x16x8x8xf32>, %arg3: memref<30x16x8x8xf32>, %arg4: memref<30x16x8x8xf32>, %arg5: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = affine.apply #map(%0)[%arg0, %arg1]
+      %4 = affine.apply #map(%1)[%arg0, %arg1]
+      %5 = affine.apply #map(%2)[%arg0, %arg1]
+      scf.for %arg6 = %arg1 to %arg5 step %arg0 {
+        %6 = memref.load %arg2[%3, %4, %5, %arg6] : memref<30x16x8x8xf32>
+        %7 = memref.load %arg3[%3, %4, %5, %arg6] : memref<30x16x8x8xf32>
+        %8 = arith.maxnumf %6, %7 : f32
+        memref.store %8, %arg4[%3, %4, %5, %arg6] : memref<30x16x8x8xf32>
+      }
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_13 {
+    gpu.func @CUDA_kernel_13(%arg0: index, %arg1: index, %arg2: memref<30x16x8x8xf32>, %arg3: memref<30x8x8x16xf32>, %arg4: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = affine.apply #map(%0)[%arg0, %arg1]
+      %4 = affine.apply #map(%1)[%arg0, %arg1]
+      %5 = affine.apply #map(%2)[%arg0, %arg1]
+      scf.for %arg5 = %arg1 to %arg4 step %arg0 {
+        %6 = memref.load %arg2[%3, %arg5, %4, %5] : memref<30x16x8x8xf32>
+        memref.store %6, %arg3[%3, %4, %5, %arg5] : memref<30x8x8x16xf32>
+      }
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_14 {
+    gpu.func @CUDA_kernel_14(%arg0: index, %arg1: index, %arg2: f32, %arg3: memref<30x4x4x16xf32>, %arg4: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = affine.apply #map(%0)[%arg0, %arg1]
+      %4 = affine.apply #map(%1)[%arg0, %arg1]
+      %5 = affine.apply #map(%2)[%arg0, %arg1]
+      scf.for %arg5 = %arg1 to %arg4 step %arg0 {
+        memref.store %arg2, %arg3[%3, %4, %5, %arg5] : memref<30x4x4x16xf32>
+      }
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_15 {
+    gpu.func @CUDA_kernel_15(%arg0: index, %arg1: index, %arg2: memref<30x8x8x16xf32>, %arg3: memref<30x4x4x16xf32>, %arg4: index, %arg5: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = affine.apply #map(%0)[%arg0, %arg1]
+      %4 = affine.apply #map(%1)[%arg0, %arg1]
+      %5 = affine.apply #map(%2)[%arg0, %arg1]
+      scf.for %arg6 = %arg1 to %arg5 step %arg0 {
+        scf.for %arg7 = %arg1 to %arg4 step %arg0 {
+          scf.for %arg8 = %arg1 to %arg4 step %arg0 {
+            %6 = affine.apply #map1(%arg7, %1)[%arg0, %arg1]
+            %7 = affine.apply #map1(%arg8, %2)[%arg0, %arg1]
+            %8 = memref.load %arg2[%3, %6, %7, %arg6] : memref<30x8x8x16xf32>
+            %9 = memref.load %arg3[%3, %4, %5, %arg6] : memref<30x4x4x16xf32>
+            %10 = arith.maxnumf %9, %8 : f32
+            memref.store %10, %arg3[%3, %4, %5, %arg6] : memref<30x4x4x16xf32>
+          }
+        }
+      }
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_16 {
+    gpu.func @CUDA_kernel_16(%arg0: index, %arg1: index, %arg2: memref<30x4x4x16xf32>, %arg3: memref<30x16x4x4xf32>, %arg4: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = affine.apply #map(%0)[%arg0, %arg1]
+      %4 = affine.apply #map(%1)[%arg0, %arg1]
+      %5 = affine.apply #map(%2)[%arg0, %arg1]
+      scf.for %arg5 = %arg1 to %arg4 step %arg0 {
+        %6 = memref.load %arg2[%3, %5, %arg5, %4] : memref<30x4x4x16xf32>
+        memref.store %6, %arg3[%3, %4, %5, %arg5] : memref<30x16x4x4xf32>
+      }
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_17 {
+    gpu.func @CUDA_kernel_17(%arg0: index, %arg1: index, %arg2: memref<120x256xf32>, %arg3: memref<256x120xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = affine.apply #map(%0)[%arg0, %arg1]
+      %3 = affine.apply #map(%1)[%arg0, %arg1]
+      %4 = memref.load %arg2[%3, %2] : memref<120x256xf32>
+      memref.store %4, %arg3[%2, %3] : memref<256x120xf32>
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_18 {
+    gpu.func @CUDA_kernel_18(%arg0: index, %arg1: index, %arg2: f32, %arg3: memref<1x30x120xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = affine.apply #map(%0)[%arg0, %arg1]
+      %3 = affine.apply #map(%1)[%arg0, %arg1]
+      memref.store %arg2, %arg3[%arg1, %2, %3] : memref<1x30x120xf32>
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_19 {
+    gpu.func @CUDA_kernel_19(%arg0: index, %arg1: index, %arg2: memref<1x30x256xf32>, %arg3: memref<1x256x120xf32>, %arg4: memref<1x30x120xf32>, %arg5: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = affine.apply #map(%0)[%arg0, %arg1]
+      %3 = affine.apply #map(%1)[%arg0, %arg1]
+      scf.for %arg6 = %arg1 to %arg5 step %arg0 {
+        %4 = memref.load %arg2[%arg1, %2, %arg6] : memref<1x30x256xf32>
+        %5 = memref.load %arg3[%arg1, %arg6, %3] : memref<1x256x120xf32>
+        %6 = memref.load %arg4[%arg1, %2, %3] : memref<1x30x120xf32>
+        %7 = arith.mulf %4, %5 : f32
+        %8 = arith.addf %6, %7 : f32
+        memref.store %8, %arg4[%arg1, %2, %3] : memref<1x30x120xf32>
+      }
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_20 {
+    gpu.func @CUDA_kernel_20(%arg0: index, %arg1: index, %arg2: memref<1x120xf32>, %arg3: memref<30x120xf32>, %arg4: memref<30x120xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = affine.apply #map(%0)[%arg0, %arg1]
+      %3 = affine.apply #map(%1)[%arg0, %arg1]
+      %4 = memref.load %arg2[%arg1, %3] : memref<1x120xf32>
+      %5 = memref.load %arg3[%2, %3] : memref<30x120xf32>
+      %6 = arith.addf %4, %5 : f32
+      memref.store %6, %arg4[%2, %3] : memref<30x120xf32>
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_21 {
+    gpu.func @CUDA_kernel_21(%arg0: index, %arg1: index, %arg2: memref<30x120xf32>, %arg3: memref<30x120xf32>, %arg4: memref<30x120xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = affine.apply #map(%0)[%arg0, %arg1]
+      %3 = affine.apply #map(%1)[%arg0, %arg1]
+      %4 = memref.load %arg2[%2, %3] : memref<30x120xf32>
+      %5 = memref.load %arg3[%2, %3] : memref<30x120xf32>
+      %6 = arith.maxnumf %4, %5 : f32
+      memref.store %6, %arg4[%2, %3] : memref<30x120xf32>
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_22 {
+    gpu.func @CUDA_kernel_22(%arg0: index, %arg1: index, %arg2: memref<84x120xf32>, %arg3: memref<120x84xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = affine.apply #map(%0)[%arg0, %arg1]
+      %3 = affine.apply #map(%1)[%arg0, %arg1]
+      %4 = memref.load %arg2[%3, %2] : memref<84x120xf32>
+      memref.store %4, %arg3[%2, %3] : memref<120x84xf32>
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_23 {
+    gpu.func @CUDA_kernel_23(%arg0: index, %arg1: index, %arg2: f32, %arg3: memref<1x30x84xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = affine.apply #map(%0)[%arg0, %arg1]
+      %3 = affine.apply #map(%1)[%arg0, %arg1]
+      memref.store %arg2, %arg3[%arg1, %2, %3] : memref<1x30x84xf32>
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_24 {
+    gpu.func @CUDA_kernel_24(%arg0: index, %arg1: index, %arg2: memref<1x30x120xf32>, %arg3: memref<1x120x84xf32>, %arg4: memref<1x30x84xf32>, %arg5: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = affine.apply #map(%0)[%arg0, %arg1]
+      %3 = affine.apply #map(%1)[%arg0, %arg1]
+      scf.for %arg6 = %arg1 to %arg5 step %arg0 {
+        %4 = memref.load %arg2[%arg1, %2, %arg6] : memref<1x30x120xf32>
+        %5 = memref.load %arg3[%arg1, %arg6, %3] : memref<1x120x84xf32>
+        %6 = memref.load %arg4[%arg1, %2, %3] : memref<1x30x84xf32>
+        %7 = arith.mulf %4, %5 : f32
+        %8 = arith.addf %6, %7 : f32
+        memref.store %8, %arg4[%arg1, %2, %3] : memref<1x30x84xf32>
+      }
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_25 {
+    gpu.func @CUDA_kernel_25(%arg0: index, %arg1: index, %arg2: memref<1x84xf32>, %arg3: memref<30x84xf32>, %arg4: memref<30x84xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = affine.apply #map(%0)[%arg0, %arg1]
+      %3 = affine.apply #map(%1)[%arg0, %arg1]
+      %4 = memref.load %arg2[%arg1, %3] : memref<1x84xf32>
+      %5 = memref.load %arg3[%2, %3] : memref<30x84xf32>
+      %6 = arith.addf %4, %5 : f32
+      memref.store %6, %arg4[%2, %3] : memref<30x84xf32>
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_26 {
+    gpu.func @CUDA_kernel_26(%arg0: index, %arg1: index, %arg2: memref<30x84xf32>, %arg3: memref<30x84xf32>, %arg4: memref<30x84xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = affine.apply #map(%0)[%arg0, %arg1]
+      %3 = affine.apply #map(%1)[%arg0, %arg1]
+      %4 = memref.load %arg2[%2, %3] : memref<30x84xf32>
+      %5 = memref.load %arg3[%2, %3] : memref<30x84xf32>
+      %6 = arith.maxnumf %4, %5 : f32
+      memref.store %6, %arg4[%2, %3] : memref<30x84xf32>
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_27 {
+    gpu.func @CUDA_kernel_27(%arg0: index, %arg1: index, %arg2: memref<10x84xf32>, %arg3: memref<84x10xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = affine.apply #map(%0)[%arg0, %arg1]
+      %3 = affine.apply #map(%1)[%arg0, %arg1]
+      %4 = memref.load %arg2[%3, %2] : memref<10x84xf32>
+      memref.store %4, %arg3[%2, %3] : memref<84x10xf32>
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_28 {
+    gpu.func @CUDA_kernel_28(%arg0: index, %arg1: index, %arg2: f32, %arg3: memref<1x30x10xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = affine.apply #map(%0)[%arg0, %arg1]
+      %3 = affine.apply #map(%1)[%arg0, %arg1]
+      memref.store %arg2, %arg3[%arg1, %2, %3] : memref<1x30x10xf32>
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_29 {
+    gpu.func @CUDA_kernel_29(%arg0: index, %arg1: index, %arg2: memref<1x30x84xf32>, %arg3: memref<1x84x10xf32>, %arg4: memref<1x30x10xf32>, %arg5: index) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = affine.apply #map(%0)[%arg0, %arg1]
+      %3 = affine.apply #map(%1)[%arg0, %arg1]
+      scf.for %arg6 = %arg1 to %arg5 step %arg0 {
+        %4 = memref.load %arg2[%arg1, %2, %arg6] : memref<1x30x84xf32>
+        %5 = memref.load %arg3[%arg1, %arg6, %3] : memref<1x84x10xf32>
+        %6 = memref.load %arg4[%arg1, %2, %3] : memref<1x30x10xf32>
+        %7 = arith.mulf %4, %5 : f32
+        %8 = arith.addf %6, %7 : f32
+        memref.store %8, %arg4[%arg1, %2, %3] : memref<1x30x10xf32>
+      }
+      gpu.return
+    }
+  }
+  gpu.module @CUDA_kernel_30 {
+    gpu.func @CUDA_kernel_30(%arg0: index, %arg1: index, %arg2: memref<1x10xf32>, %arg3: memref<30x10xf32>, %arg4: memref<30x10xf32>) kernel attributes {gpu.known_block_size = array<i32: 1, 1, 1>} {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = affine.apply #map(%0)[%arg0, %arg1]
+      %3 = affine.apply #map(%1)[%arg0, %arg1]
+      %4 = memref.load %arg2[%arg1, %3] : memref<1x10xf32>
+      %5 = memref.load %arg3[%2, %3] : memref<30x10xf32>
+      %6 = arith.addf %4, %5 : f32
+      memref.store %6, %arg4[%2, %3] : memref<30x10xf32>
+      gpu.return
+    }
+  }
 }
 
