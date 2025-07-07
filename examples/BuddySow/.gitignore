@@ -12,3 +12,4 @@ lenet.mlir
 forward.mlir
 subgraph0.mlir
 subgraph1.mlir
+*.mlir
