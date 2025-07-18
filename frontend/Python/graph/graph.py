@@ -137,6 +137,7 @@ class Graph:
         self.execution_engine = None
         self.op_groups: Dict[str, List[Op]] = {}
         self.group_map_device: Dict[str, DeviceType] = {}
+        self.subgraph_sort = []
 
     @property
     def body(self):

@@ -727,21 +727,22 @@
       }
     ],
     "node_map_device": {
-      "convolution": "gpu0",
-      "relu": "gpu1",
+      "convolution": "cpu",
+      "relu": "gpu0",
       "max_pool2d": "cpu",
       "convolution_1": "cpu",
-      "relu_1": "gpu0",
+      "relu_1": "gpu1",
       "max_pool2d_1": "cpu",
-      "view": "cpu",
       "permute": "cpu",
+      "view": "cpu",
       "addmm": "cpu",
-      "relu_2": "gpu1",
+      "relu_2": "gpu0",
       "permute_1": "cpu",
       "addmm_1": "cpu",
-      "relu_3": "cpu",
+      "relu_3": "gpu1",
       "permute_2": "cpu",
       "addmm_2": "cpu",
       "output": "cpu"
-    }
+    },
+    "group_num": 1
   }

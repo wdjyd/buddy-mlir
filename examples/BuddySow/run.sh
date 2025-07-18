@@ -10,15 +10,15 @@ python3 buddy-lenet-import.py
 sh fatbin.sh
 
 
-_RUN_DIR=/root/wafer_project/wafer_test/result/
+_RUN_DIR=/home/newdisk/kt/sowProject/tests/20250717_888888/
 cp *.out "$_RUN_DIR"
 cd ../../build
 cmake -G Ninja .. -DBUDDY_SOW_EXAMPLES=ON
 ninja buddy-sow-run
 cd bin/
-cp buddy-sow-run "$_RUN_DIR"/wafer_run_exe
+cp buddy-sow-run "$_RUN_DIR"/kt_run_exe
 
-cd ../../../wafer_project/wafer_test/tools
-./design_run
+cd /home/newdisk/kt/sowProject/module_cd/tools
+./design_run /home/newdisk/kt/sowProject/tests/20250717_888888/ 0
 
 

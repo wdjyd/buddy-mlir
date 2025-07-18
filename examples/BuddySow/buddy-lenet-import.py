@@ -22,6 +22,7 @@ import os
 from pathlib import Path
 
 import numpy as np
+import json
 import torch
 from torch._inductor.decomposition import decompositions as inductor_decomp
 
@@ -35,6 +36,21 @@ from model import LeNet
 from cmake_generator import generate_cmake
 from fatbin_shell_generator import generate_shell
 from group_scheduler import group_scheduler
+
+
+def get_info_from_json(json_str):
+    graph_json = json.loads(json_str)
+    group_num = graph_json['group_num'] 
+    task_cnt_per_group = graph_json['inputs'][0]['shape'][0]
+    gpu_num = 0
+    for node, op_device in graph_json['node_map_device'].items():
+        if op_device.startswith('gpu'):
+            gpu_id = int(op_device[3:])
+            if gpu_id >= gpu_num:
+                gpu_num = gpu_id + 1
+    return gpu_num, group_num, task_cnt_per_group
+
+
 
 # Retrieve the LeNet model path from environment variables.
 model_path = os.environ.get("LENET_EXAMPLE_PATH")
@@ -88,14 +104,16 @@ for subgraph in driver.subgraphs:
 with open(os.path.join(path_prefix, "forward.mlir"), "w") as module_file:
     print(driver.construct_main_graph(True), file=module_file)
 
+gpu_num, group_num, task_cnt_per_group = get_info_from_json(json_str)
+
 group_module = group_scheduler(
     graph0._fake_params,
-    TensorMeta([3, 1, 28, 28], TensorDType.Float32),
-    TensorMeta([3, 10], TensorDType.Float32),
-    TensorMeta([1, 1, 28, 28], TensorDType.Float32),
-    TensorMeta([1, 10], TensorDType.Float32),
+    TensorMeta([group_num*task_cnt_per_group, 1, 28, 28], TensorDType.Float32),
+    TensorMeta([group_num*task_cnt_per_group, 10], TensorDType.Float32),
+    TensorMeta([task_cnt_per_group, 1, 28, 28], TensorDType.Float32),
+    TensorMeta([task_cnt_per_group, 10], TensorDType.Float32),
     "forward",
-    3
+    group_num
 )
 
 with open(os.path.join(path_prefix, "group_scheduler.mlir"), "w") as module_file:
@@ -107,7 +125,7 @@ with open(os.path.join(path_prefix, "CMakeLists.txt"), "w") as module_file:
 
 # Generate makefile file to compile the graph
 with open(os.path.join(path_prefix, "fatbin.sh"), "w") as module_file:
-    print(generate_shell(driver, 2), file=module_file)
+    print(generate_shell(driver, gpu_num), file=module_file)
 
 # params = dynamo_compiler.imported_params[graph]
 # current_path = os.path.dirname(os.path.abspath(__file__))

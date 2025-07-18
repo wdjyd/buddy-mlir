@@ -79,6 +79,15 @@ def SST_SetDeviceOp : SST_Op <"set_device", []> {
   let arguments = (ins Index : $deviceId);
 }
 
+def SST_GetStartTimeOp : SST_Op <"get_start", []> {
+}
+
+def SST_GetEndTimeOp : SST_Op <"get_end", []> {
+}
+
+def SST_PrintTimeOp : SST_Op <"print_time", []> {
+}
+
 def SST_GetCpuIdOp : SST_Op <"get_cpuid", []> {
   let results = (outs Index : $cpuId);
 }

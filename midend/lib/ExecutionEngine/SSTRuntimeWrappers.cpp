@@ -1,6 +1,25 @@
 #include "ExecutionEngine/cuda_runtime_api_def.h"
+#include <sys/time.h>
 #include <cstdlib>
 #include <cstdint>
+
+struct timeval start, end;
+
+extern "C"
+void sstGetStartTime(){
+  gettimeofday(&start, NULL);
+}
+
+extern "C"
+void sstGetEndTime(){
+  gettimeofday(&end, NULL);
+}
+
+extern "C"
+void sstPrintTime(){
+	double timeuse = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1000000.0;
+	printf("------------subgraph executing time is %f\n-----------",timeuse);
+}
 
 extern "C"
 unsigned int __sstcudaRegisterFatBinary(uint64_t fatbin, uint64_t oid) {

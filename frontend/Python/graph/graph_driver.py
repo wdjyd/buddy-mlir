@@ -244,10 +244,14 @@ class GraphDriver:
                 main_graph.add_node(op)
             
         # Analysis topology order to sort subgraph call.
-        topo_order = self.topological_sort_subgraph()
-        if topo_order ==  None:
-            print('Error : Graph Partitioning is illegal!')
-            return None
+        if len(self._graph.subgraph_sort) == 0:
+            topo_order = self.topological_sort_subgraph()
+            if topo_order ==  None:
+                print('Error : Graph Partitioning is illegal!')
+                return None
+        else:
+            topo_order = self._graph.subgraph_sort
+        # topo_order = self.topological_sort_subgraph()
         
         # Adding CallOp to invoke the single subgraph
         for i, subgraph_name in enumerate(topo_order):

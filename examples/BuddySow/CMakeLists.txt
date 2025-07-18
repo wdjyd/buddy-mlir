@@ -442,38 +442,6 @@ add_custom_command(
     VERBATIM)
     
 add_custom_command(
-    OUTPUT subgraph2_11.o
-    COMMAND ${LLVM_MLIR_BINARY_DIR}/mlir-opt ${BUDDY_EXAMPLES_DIR}/BuddySow/subgraph2_11.mlir 
-                -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
-            ${BUDDY_BINARY_DIR}/buddy-opt
-                -eliminate-empty-tensors
-                -convert-tensor-to-linalg 
-                -linalg-bufferize
-                -convert-linalg-to-affine-loops
-                -lower-affine
-                -func-bufferize
-                -arith-bufferize
-                -tensor-bufferize
-                -buffer-deallocation
-                -finalizing-bufferize
-                -convert-vector-to-scf
-                -expand-strided-metadata
-                -convert-vector-to-llvm
-                -convert-arith-to-llvm
-                -finalize-memref-to-llvm
-                -convert-scf-to-cf
-                -llvm-request-c-wrappers
-                -convert-arith-to-llvm
-                -convert-func-to-llvm
-                -reconcile-unrealized-casts | 
-            ${LLVM_MLIR_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
-            ${LLVM_MLIR_BINARY_DIR}/llvm-as |
-            ${LLVM_MLIR_BINARY_DIR}/llc -filetype=obj  -relocation-model=pic -O0 -o ${BUDDY_BINARY_DIR}/../examples/BuddySow/subgraph2_11.o
-    DEPENDS ${BUDDY_EXAMPLES_DIR}/BuddySow/subgraph2_11.mlir
-    COMMENT "Building subgraph2_11.o"
-    VERBATIM)
-    
-add_custom_command(
     OUTPUT forward.o
     COMMAND ${LLVM_MLIR_BINARY_DIR}/mlir-opt ${BUDDY_EXAMPLES_DIR}/BuddySow/forward.mlir 
                 -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" | 
@@ -497,7 +465,7 @@ add_custom_command(
     COMMENT "Building group_scheduler.o"
     VERBATIM)
 
-add_library(WAFER_LENET STATIC subgraph0_0.o subgraph1_0.o subgraph0_1.o subgraph1_1.o subgraph2_0.o subgraph2_1.o subgraph2_2.o subgraph2_3.o subgraph2_4.o subgraph2_5.o subgraph2_6.o subgraph2_7.o subgraph2_8.o subgraph2_9.o subgraph2_10.o subgraph2_11.o forward.o group_scheduler.o)
+add_library(WAFER_LENET STATIC subgraph0_0.o subgraph1_0.o subgraph0_1.o subgraph1_1.o subgraph2_0.o subgraph2_1.o subgraph2_2.o subgraph2_3.o subgraph2_4.o subgraph2_5.o subgraph2_6.o subgraph2_7.o subgraph2_8.o subgraph2_9.o subgraph2_10.o forward.o group_scheduler.o)
 SET_TARGET_PROPERTIES(WAFER_LENET PROPERTIES LINKER_LANGUAGE C)
 add_executable(buddy-sow-run buddy-sow-main.cpp)
 target_link_directories(buddy-sow-run PRIVATE ${LLVM_MLIR_LIBRARY_DIR})

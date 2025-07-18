@@ -117,6 +117,8 @@ def json_to_graph(json_str):
     
     subgraph_cpu_id = len(device_ops_count)
     for node, op_device in graph_json['node_map_device'].items():
+        if node == "output":
+            continue
         if op_device.startswith('cpu'):
             if op_device in device_ops_count:
                 device_ops_count[op_device] += 1
@@ -126,5 +128,14 @@ def json_to_graph(json_str):
             op = graph.node_table[node]
             graph.op_groups[subgraph_name] = [op]
             graph.group_map_device[subgraph_name] = DeviceType('cpu')
+    
+    for node, op_device in graph_json['node_map_device'].items():
+        if node == "output":
+            continue
+        op = graph.node_table[node]
+        for subgraph_name, ops in graph.op_groups.items():
+            if op in ops:
+                graph.subgraph_sort.append(subgraph_name)
+                break
 
     return graph
